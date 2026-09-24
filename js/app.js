@@ -77,6 +77,7 @@ class PortfolioApp {
     this.viewMode = 'grid'; // 'grid' | 'list'
     this.lightbox = null;
     this.threeViewer = null;
+    this.modalThreeViewer = null;
     this.motionPlayer = null;
     this.interactivity = null;
 
@@ -939,7 +940,7 @@ class PortfolioApp {
           pendingDiscipline = null;
         }
       } catch (err) {
-        console.error('Three.js viewer deferred initialization failed:', err);
+        console.error('[WORLDZ] Three.js viewer deferred initialization failed:', err);
       } finally {
         isLoadingThree = false;
       }
@@ -951,7 +952,7 @@ class PortfolioApp {
     if (window.location.hash === '#3d-model') {
       loadThree();
     } else if ('IntersectionObserver' in window && section) {
-      // Defer loading until Section 03 approaches the viewport (600px rootMargin)
+      // Lazy load only when Section 03 approaches the viewport (generous 600px rootMargin)
       const observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
@@ -962,15 +963,6 @@ class PortfolioApp {
       }, { rootMargin: '600px 0px' });
 
       observer.observe(section);
-    } else {
-      // Fallback: load after window load when main thread is idle
-      window.addEventListener('load', () => {
-        if ('requestIdleCallback' in window) {
-          requestIdleCallback(() => loadThree(), { timeout: 3000 });
-        } else {
-          setTimeout(loadThree, 1500);
-        }
-      }, { once: true });
     }
 
     // Creative Discipline Filter Bar
@@ -1804,6 +1796,11 @@ class PortfolioApp {
     }
     if (!project) return;
 
+    if (this.modalThreeViewer) {
+      this.modalThreeViewer.destroy();
+      this.modalThreeViewer = null;
+    }
+
     window.location.hash = `project-${project.id}`;
 
     const modal = document.getElementById('project-modal');
@@ -2121,9 +2118,9 @@ class PortfolioApp {
     if (project.is3D) {
       setTimeout(async () => {
         const modalViewport = document.getElementById('modal-three-viewport');
-        if (modalViewport) {
+        if (modalViewport && !this.modalThreeViewer) {
           const { ThreeViewer } = await import('./three-viewer.js');
-          new ThreeViewer('modal-three-viewport', project.modelPath);
+          this.modalThreeViewer = new ThreeViewer('modal-three-viewport', project.modelPath);
         }
       }, 100);
     }
@@ -2166,6 +2163,10 @@ class PortfolioApp {
   closeProjectModal() {
     const modal = document.getElementById('project-modal');
     if (!modal) return;
+    if (this.modalThreeViewer) {
+      this.modalThreeViewer.destroy();
+      this.modalThreeViewer = null;
+    }
     modal.classList.remove('is-active');
     this.resetModalAmbient();
     document.body.style.overflow = '';

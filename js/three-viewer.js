@@ -16,11 +16,87 @@
  * - Keyboard shortcuts: ESC (reset view), R (reset Earth), F (fullscreen)
  * - Double-click zoom, touch drag/pinch, and idle auto-rotation resume
  * - IntersectionObserver viewport pausing for 0% CPU overhead when off-screen
+ * - Hard mobile/iOS safety profile: capped DPR, throttled FPS, context lost handling
  */
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+/**
+ * Device & Capability Detection
+ * Multi-factor heuristic for iOS (iPhone/iPad/iPod, Chrome for iOS CriOS, WebKit mobile)
+ */
+export const isIOS = (() => {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  const platform = navigator.platform || '';
+  const maxTouchPoints = navigator.maxTouchPoints || 0;
+  return (
+    /iPad|iPhone|iPod/.test(ua) ||
+    /CriOS|FxiOS|Version\/.*Mobile.*Safari/.test(ua) ||
+    (platform === 'MacIntel' && maxTouchPoints > 1) ||
+    (Boolean(window.webkit) && maxTouchPoints > 0)
+  );
+})();
+
+export const isMobile = (() => {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+  if (isIOS) return true;
+  const ua = navigator.userAgent || '';
+  return (
+    /Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua) ||
+    window.innerWidth <= 768 ||
+    (navigator.maxTouchPoints && navigator.maxTouchPoints > 1 && window.innerWidth <= 1024)
+  );
+})();
+
+/**
+ * Robust device rendering profiles:
+ * - Desktop: DPR capped at 1.25, 60 FPS, 64 segments
+ * - Mobile: DPR capped at 1.0, 30 FPS, 48 segments
+ * - iOS: DPR capped at 0.85, 28 FPS, 36 segments (hard stability profile to prevent WebKit memory pressure)
+ */
+export const WORLDZ_CONFIG = {
+  desktop: {
+    maxDpr: 1.25,
+    targetFPS: 60,
+    frameInterval: 1000 / 60,
+    sphereSegments: 64,
+    particles: 150,
+    arcPoints: 36,
+    powerPreference: 'high-performance',
+    antialias: true,
+    precision: 'highp'
+  },
+  mobile: {
+    maxDpr: 1.0,
+    targetFPS: 30,
+    frameInterval: 1000 / 30,
+    sphereSegments: 48,
+    particles: 70,
+    arcPoints: 24,
+    powerPreference: 'default',
+    antialias: false,
+    precision: 'mediump'
+  },
+  ios: {
+    maxDpr: 0.85,
+    targetFPS: 28,
+    frameInterval: 1000 / 28,
+    sphereSegments: 36,
+    particles: 40,
+    arcPoints: 18,
+    powerPreference: 'low-power',
+    antialias: false,
+    precision: 'mediump'
+  }
+};
+
+let worldzMainInstance = null;
+let worldzInitialized = false;
+let worldzInitializing = false;
+let worldzUnavailable = false;
 
 // Centralized Configuration: 20 Global Creative Locations
 export const CREATIVE_LOCATIONS = [
@@ -445,13 +521,36 @@ export function getLocalTimeString(timezone, now = new Date()) {
   }
 }
 
+
 export class ThreeViewer {
   constructor(containerId, modelUrl = 'assets/3d/earth.glb') {
-    this.container = document.getElementById(containerId);
-    if (!this.container) return;
+    this.containerId = containerId;
+    this.isMainViewer = (containerId === 'three-viewport');
 
+    // Strict Singleton Guard for WORLDZ
+    if (this.isMainViewer) {
+      if (worldzUnavailable) {
+        console.warn('[WORLDZ] initialization skipped: unavailable for session');
+        return;
+      }
+      if (worldzInitialized || worldzInitializing) {
+        return worldzMainInstance;
+      }
+      worldzInitializing = true;
+      worldzMainInstance = this;
+    }
+
+    this.container = document.getElementById(containerId);
+    if (!this.container) {
+      if (this.isMainViewer) worldzInitializing = false;
+      return;
+    }
+
+    const profileKey = isIOS ? 'ios' : (isMobile ? 'mobile' : 'desktop');
+    this.profile = WORLDZ_CONFIG[profileKey];
     this.modelUrl = modelUrl;
     this.isEarthScene = modelUrl.toLowerCase().includes('earth');
+
     this.scene = null;
     this.camera = null;
     this.renderer = null;
@@ -469,6 +568,14 @@ export class ThreeViewer {
     this.defaultTarget = new THREE.Vector3(0, 0, 0);
     this.renderMode = 'solid';
     this.wireframeObjects = [];
+
+    // Pre-allocated scratch objects to eliminate per-frame GC allocations
+    this._scratchVec3_1 = new THREE.Vector3();
+    this._scratchVec3_2 = new THREE.Vector3();
+    this._scratchQuat_1 = new THREE.Quaternion();
+    this._scratchQuat_2 = new THREE.Quaternion();
+    this._unitZ = new THREE.Vector3(0, 0, 1);
+    this._pointerCoords = { x: 0, y: 0, screenX: 0, screenY: 0 };
 
     // Idle auto-rotation resume timer
     this.idleTimer = null;
@@ -502,9 +609,15 @@ export class ThreeViewer {
     this.activeSignalHops = ['india', 'singapore', 'japan', 'united-states', 'united-kingdom', 'germany', 'india'];
     this.currentHopIndex = 0;
 
-    // Viewport optimization
+    // Viewport optimization & single RAF loop guards
     this.isPaused = false;
+    this.isOffscreen = false;
+    this.animationFrameId = null;
+    this.isRendering = false;
+    this.lastFrameTime = 0;
     this.intersectionObserver = null;
+    this.resizeObserver = null;
+    this.resizeRafId = null;
 
     // Interactive pointer & raycasting
     this.mouse = { x: 0, y: 0 };
@@ -516,34 +629,52 @@ export class ThreeViewer {
     // Clock update interval
     this.clockInterval = null;
 
+    // Event listener tracking for clean disposal
+    this._cleanups = [];
+
     this.init();
   }
 
   init() {
+    console.log('[WORLDZ] initialization started');
+    console.log('[WORLDZ] Three.js loaded');
+
     this.container.innerHTML = '';
     this.container.style.position = 'relative';
     this.container.style.overflow = 'hidden';
     this.container.style.cursor = 'grab';
 
     // Drag cursor state & idle handling
-    this.container.addEventListener('mousedown', () => {
+    const onMouseDown = () => {
       this.container.style.cursor = 'grabbing';
       this.handleUserInteractionStart();
-    });
-    this.container.addEventListener('mouseup', () => {
+    };
+    const onMouseUp = () => {
       this.container.style.cursor = 'grab';
       this.handleUserInteractionEnd();
-    });
-    this.container.addEventListener('touchstart', () => {
+    };
+    const onTouchStart = () => {
       this.handleUserInteractionStart();
-    }, { passive: true });
-    this.container.addEventListener('touchend', () => {
+    };
+    const onTouchEnd = () => {
       this.handleUserInteractionEnd();
-    }, { passive: true });
-
-    // Double-click zoom toggle
-    this.container.addEventListener('dblclick', (e) => {
+    };
+    const onDblClick = (e) => {
       this.handleDoubleClick(e);
+    };
+
+    this.container.addEventListener('mousedown', onMouseDown);
+    this.container.addEventListener('mouseup', onMouseUp);
+    this.container.addEventListener('touchstart', onTouchStart, { passive: true });
+    this.container.addEventListener('touchend', onTouchEnd, { passive: true });
+    this.container.addEventListener('dblclick', onDblClick);
+
+    this._cleanups.push(() => {
+      this.container.removeEventListener('mousedown', onMouseDown);
+      this.container.removeEventListener('mouseup', onMouseUp);
+      this.container.removeEventListener('touchstart', onTouchStart);
+      this.container.removeEventListener('touchend', onTouchEnd);
+      this.container.removeEventListener('dblclick', onDblClick);
     });
 
     // Loading overlay
@@ -567,24 +698,59 @@ export class ThreeViewer {
 
     // Scene
     this.scene = new THREE.Scene();
+    console.log('[WORLDZ] scene created');
 
     // Camera
-    const width = this.container.clientWidth || 800;
-    const height = this.container.clientHeight || 500;
+    const width = Math.max(this.container.clientWidth || 800, 100);
+    const height = Math.max(this.container.clientHeight || 500, 100);
     this.camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100);
     this.camera.position.copy(this.defaultCamPos);
 
-    // Renderer with mobile/high-DPI capped pixel ratio
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+    // Renderer with try-catch context creation
+    try {
+      this.renderer = new THREE.WebGLRenderer({
+        antialias: this.profile.antialias,
+        alpha: true,
+        powerPreference: this.profile.powerPreference,
+        precision: this.profile.precision,
+        failIfMajorPerformanceCaveat: false
+      });
+      console.log('[WORLDZ] renderer created');
+    } catch (err) {
+      console.error('[WORLDZ] WebGL initialization failed:', err);
+      this.gracefullyDisableWorldz(err);
+      if (this.isMainViewer) {
+        worldzInitializing = false;
+        worldzUnavailable = true;
+      }
+      return;
+    }
+
     this.renderer.setSize(width, height);
-    const isMobile = window.innerWidth < 768 || (navigator.maxTouchPoints && navigator.maxTouchPoints > 1);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.2 : 1.5));
+    const dpr = Math.min(window.devicePixelRatio || 1, this.profile.maxDpr);
+    this.renderer.setPixelRatio(dpr);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.15;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.container.appendChild(this.renderer.domElement);
 
-    // OrbitControls with smooth inertia damping & mobile touch pinch-zoom
+    // Context loss / restore handlers
+    const canvas = this.renderer.domElement;
+    this.onContextLost = (e) => {
+      e.preventDefault();
+      console.warn('[WORLDZ] context lost');
+      if (this.isMainViewer) worldzUnavailable = true;
+      this.stopAnimation();
+      this.isPaused = true;
+      if (this.controls) this.controls.enabled = false;
+    };
+    this.onContextRestored = () => {
+      console.log('[WORLDZ] context restored');
+    };
+    canvas.addEventListener('webglcontextlost', this.onContextLost, false);
+    canvas.addEventListener('webglcontextrestored', this.onContextRestored, false);
+
+    // OrbitControls with smooth inertia damping & touch pinch-zoom
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
@@ -601,7 +767,7 @@ export class ThreeViewer {
     // Lighting (Day/Night real-time solar terminator)
     this.setupLighting();
 
-    // Subtle cosmic starfield background particles
+    // Cosmic starfield background particles
     this.setupCosmicParticles();
 
     // Raycasting for marker hover & click interaction
@@ -613,37 +779,38 @@ export class ThreeViewer {
     // Build HUD Controls
     this.buildControlsUI();
 
-    // Build / Populate 20-Country Quick Navigation Directory
-    this.buildCountryDirectory();
+    // Directory & Clock only on main section viewer
+    if (this.isMainViewer) {
+      this.buildCountryDirectory();
+      this.buildLiveWorldClock();
+      this.clockInterval = setInterval(() => {
+        this.updateLiveClocks();
+      }, 1000);
+      this.startWorldSignalLoop();
+    }
 
-    // Build Live World Clock Strip
-    this.buildLiveWorldClock();
-
-    // Viewport Intersection Observer (pause rendering when scrolled away)
+    // Viewport Intersection Observer
     this.setupViewportObserver();
 
     // Global Keyboard Shortcuts
     this.setupKeyboardShortcuts();
 
-    // Responsive handling
-    this.resizeObserver = new ResizeObserver(() => this.onResize());
+    // Throttled Resize handling
+    this.resizeObserver = new ResizeObserver(() => {
+      if (this.resizeRafId) cancelAnimationFrame(this.resizeRafId);
+      this.resizeRafId = requestAnimationFrame(() => {
+        this.onResize();
+      });
+    });
     this.resizeObserver.observe(this.container);
 
-    // Periodic clock update every second
-    this.clockInterval = setInterval(() => {
-      this.updateLiveClocks();
-    }, 1000);
-
-    // Start autonomous World Signal loop
-    this.startWorldSignalLoop();
-
     // Start animation loop
-    this.animate();
+    this.startAnimation();
   }
 
   handleUserInteractionStart() {
     this.isInteracting = true;
-    this.controls.autoRotate = false;
+    if (this.controls) this.controls.autoRotate = false;
     if (this.idleTimer) clearTimeout(this.idleTimer);
     this.fadeInteractionHint();
   }
@@ -652,9 +819,8 @@ export class ThreeViewer {
     this.isInteracting = false;
     if (this.idleTimer) clearTimeout(this.idleTimer);
     if (!this.prefersReducedMotion) {
-      // Gently resume auto-rotation after 4.5 seconds of user idle
       this.idleTimer = setTimeout(() => {
-        if (!this.isInteracting && !this.isFlying) {
+        if (!this.isInteracting && !this.isFlying && this.controls) {
           this.isAutoRotating = true;
           this.controls.autoRotate = true;
           const btnAuto = this.container.querySelector('#three-btn-autorotate');
@@ -675,7 +841,6 @@ export class ThreeViewer {
       const loc = intersects[0].object.userData.location;
       if (loc) this.selectLocation(loc);
     } else {
-      // Toggle between zoom-in and default view
       const currentDist = this.camera.position.distanceTo(this.controls.target);
       if (currentDist > 3.2) {
         this.zoomToDistance(2.4);
@@ -686,30 +851,21 @@ export class ThreeViewer {
   }
 
   setupLighting() {
-    // Soft cosmic ambient fill
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.48);
     this.scene.add(ambientLight);
 
-    // Main Directional Sun Light (synced to real-time UTC solar longitude & declination)
     this.sunLight = new THREE.DirectionalLight(0xfff9f0, 2.6);
     this.updateSunPosition();
     this.scene.add(this.sunLight);
 
-    // Night-side subtle atmospheric cool rim fill
     this.nightRimLight = new THREE.DirectionalLight(0x1a2e55, 0.68);
     this.updateNightLightPosition();
     this.scene.add(this.nightRimLight);
 
-    // Soft top bounce
     const topLight = new THREE.HemisphereLight(0x88bbff, 0x0a0e1a, 0.35);
     this.scene.add(topLight);
   }
 
-  /**
-   * Deterministic real-time day/night calculation synced to current UTC hour.
-   * At 12:00 UTC, the sun is positioned over Greenwich (lon = 0).
-   * Automatically calculates solar longitude and seasonal axial tilt declination.
-   */
   updateSunPosition() {
     if (!this.sunLight) return;
     const now = new Date();
@@ -731,13 +887,12 @@ export class ThreeViewer {
 
   updateNightLightPosition() {
     if (!this.sunLight || !this.nightRimLight) return;
-    // Position night rim opposite the sun
-    const opp = this.sunLight.position.clone().negate().normalize().multiplyScalar(10);
-    this.nightRimLight.position.copy(opp);
+    this._scratchVec3_2.copy(this.sunLight.position).negate().normalize().multiplyScalar(10);
+    this.nightRimLight.position.copy(this._scratchVec3_2);
   }
 
   setupCosmicParticles() {
-    const particleCount = 200;
+    const particleCount = this.profile.particles;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
 
@@ -765,50 +920,52 @@ export class ThreeViewer {
       this.intersectionObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           this.isOffscreen = !entry.isIntersecting;
-          this.setPaused(this.isOffscreen || document.hidden);
+          if (this.isOffscreen) {
+            this.stopAnimation();
+          } else if (!document.hidden) {
+            this.startAnimation();
+          }
         });
-      }, { threshold: 0.05 });
+      }, { rootMargin: '200px 0px', threshold: 0.01 });
       this.intersectionObserver.observe(this.container);
     }
 
     this.onVisibilityChange = () => {
-      this.setPaused(document.hidden || this.isOffscreen);
+      if (document.hidden) {
+        this.stopAnimation();
+      } else if (!this.isOffscreen) {
+        this.startAnimation();
+      }
     };
     document.addEventListener('visibilitychange', this.onVisibilityChange);
   }
 
   setPaused(paused) {
-    const wasPaused = this.isPaused;
     this.isPaused = !!paused;
     if (this.isPaused) {
-      if (this.animId) {
-        cancelAnimationFrame(this.animId);
-        this.animId = null;
-      }
-    } else if (wasPaused && !this.animId) {
-      this.animate();
+      this.stopAnimation();
+    } else if (!this.isOffscreen) {
+      this.startAnimation();
     }
   }
 
   setupKeyboardShortcuts() {
-    window.addEventListener('keydown', (e) => {
-      // Only handle if section 03 is in view or active
-      if (this.isPaused) return;
+    const onKeyDown = (e) => {
+      if (this.isPaused || this.isOffscreen) return;
 
-      if (e.key === 'Escape') {
-        this.resetView();
-      } else if (e.key === 'r' || e.key === 'R') {
+      if (e.key === 'Escape' || e.key === 'r' || e.key === 'R') {
         this.resetView();
       } else if (e.key === 'f' || e.key === 'F') {
         this.toggleFullscreen();
       } else if (e.key === ' ') {
-        // Spacebar toggle auto-rotation
         if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
           e.preventDefault();
           this.toggleAutoRotate();
         }
       }
-    });
+    };
+    window.addEventListener('keydown', onKeyDown);
+    this._cleanups.push(() => window.removeEventListener('keydown', onKeyDown));
   }
 
   fadeInteractionHint() {
@@ -820,7 +977,7 @@ export class ThreeViewer {
 
   loadModel() {
     const loader = new GLTFLoader();
-    const pctEl = this.loadingEl.querySelector('.three-loader-pct');
+    const pctEl = this.loadingEl ? this.loadingEl.querySelector('.three-loader-pct') : null;
 
     loader.load(
       encodeURI(this.modelUrl),
@@ -867,28 +1024,6 @@ export class ThreeViewer {
                   child.material.metalness = 0.05;
                 }
               }
-
-              // Wireframe support
-              const wireGeom = new THREE.WireframeGeometry(child.geometry);
-              const wireMat = new THREE.LineBasicMaterial({
-                color: 0x60a5fa,
-                transparent: true,
-                opacity: 0.4,
-                linewidth: 1
-              });
-              const wireLines = new THREE.LineSegments(wireGeom, wireMat);
-              wireLines.visible = false;
-              child.add(wireLines);
-
-              child.userData.wireframeLines = wireLines;
-              child.userData.wireframeCoreMat = new THREE.MeshBasicMaterial({
-                color: 0x06080c,
-                polygonOffset: true,
-                polygonOffsetFactor: 1,
-                polygonOffsetUnits: 1
-              });
-
-              this.wireframeObjects.push({ wireGeom, wireMat, coreMat: child.userData.wireframeCoreMat });
             }
           }
         });
@@ -910,11 +1045,17 @@ export class ThreeViewer {
         this.earthRadius = 1.1;
 
         // Build 20 Creative Locations & Connection Arcs if this is Earth
-        if (this.isEarthScene) {
+        if (this.isEarthScene && this.isMainViewer) {
           this.setupCreativeNetwork(this.earthMesh);
         }
 
         this.scene.add(this.model);
+        console.log('[WORLDZ] earth created');
+
+        if (this.isMainViewer) {
+          worldzInitialized = true;
+          worldzInitializing = false;
+        }
 
         // Apply initial render mode
         this.applyRenderMode();
@@ -926,7 +1067,7 @@ export class ThreeViewer {
             if (this.loadingEl && this.loadingEl.parentNode) {
               this.loadingEl.parentNode.removeChild(this.loadingEl);
             }
-          }, 400);
+          }, 300);
         }
       },
       (xhr) => {
@@ -936,27 +1077,67 @@ export class ThreeViewer {
         }
       },
       (error) => {
-        console.error('Error loading 3D model:', error);
-        if (this.loadingEl) {
-          this.loadingEl.innerHTML = `
-            <div class="three-loader-inner">
-              <span class="three-loader-text">WebGL Scene Ready</span>
-              <span class="three-loader-pct" style="font-size: 11px; opacity: 0.7;">Interactive Environment Loaded</span>
-            </div>
-          `;
-          setTimeout(() => {
-            if (this.loadingEl && this.loadingEl.parentNode) {
-              this.loadingEl.parentNode.removeChild(this.loadingEl);
-            }
-          }, 800);
-        }
+        console.warn('[WORLDZ] 3D model load failed, creating robust procedural Earth:', error);
+        this.createFallbackEarth();
       }
     );
   }
 
-  /**
-   * Convert latitude and longitude to 3D Cartesian coordinates on sphere.
-   */
+  createFallbackEarth() {
+    const segs = this.profile.sphereSegments;
+    const geom = new THREE.SphereGeometry(this.earthRadius, segs, Math.round(segs / 2));
+    const textureLoader = new THREE.TextureLoader();
+
+    textureLoader.load(
+      'assets/3d/EARTH3D.webp',
+      (texture) => {
+        texture.colorSpace = THREE.SRGBColorSpace;
+        const mat = new THREE.MeshStandardMaterial({
+          map: texture,
+          roughness: 0.65,
+          metalness: 0.05
+        });
+        const mesh = new THREE.Mesh(geom, mat);
+        this.earthMesh = mesh;
+        this.model = new THREE.Group();
+        this.model.add(mesh);
+
+        // Atmosphere shell
+        const atmoGeom = new THREE.SphereGeometry(this.earthRadius * 1.025, Math.round(segs / 2), Math.round(segs / 4));
+        const atmoMat = new THREE.MeshBasicMaterial({
+          color: 0x38bdf8,
+          transparent: true,
+          opacity: 0.18,
+          blending: THREE.AdditiveBlending,
+          side: THREE.BackSide
+        });
+        const atmoMesh = new THREE.Mesh(atmoGeom, atmoMat);
+        this.model.add(atmoMesh);
+
+        if (this.isEarthScene && this.isMainViewer) {
+          this.setupCreativeNetwork(this.earthMesh);
+        }
+
+        this.scene.add(this.model);
+        console.log('[WORLDZ] earth created');
+
+        if (this.isMainViewer) {
+          worldzInitialized = true;
+          worldzInitializing = false;
+        }
+
+        if (this.loadingEl && this.loadingEl.parentNode) {
+          this.loadingEl.parentNode.removeChild(this.loadingEl);
+        }
+      },
+      undefined,
+      (err) => {
+        console.error('[WORLDZ] Fallback texture load failed:', err);
+        this.gracefullyDisableWorldz(err);
+      }
+    );
+  }
+
   latLonToVector3(lat, lon, radius) {
     const phi = (90 - lat) * (Math.PI / 180);
     const theta = (lon + 180) * (Math.PI / 180);
@@ -966,26 +1147,21 @@ export class ThreeViewer {
     return new THREE.Vector3(x, y, z);
   }
 
-  /**
-   * Creates minimal interactive location markers and 3D Bezier connection arcs for all 20 countries.
-   */
   setupCreativeNetwork(earthMesh) {
     this.markersGroup = new THREE.Group();
     this.markersGroup.name = 'creative-network-markers';
 
-    // Base location (Chennai)
     const baseLoc = CREATIVE_LOCATIONS.find(l => l.isBase) || CREATIVE_LOCATIONS[0];
-    const basePos = this.latLonToVector3(baseLoc.lat, baseLoc.lon, this.earthRadius * 1.018);
 
     CREATIVE_LOCATIONS.forEach((loc, idx) => {
       const pos = this.latLonToVector3(loc.lat, loc.lon, this.earthRadius * 1.018);
 
       const markerObj = new THREE.Group();
       markerObj.position.copy(pos);
-      markerObj.lookAt(pos.clone().multiplyScalar(2)); // Align marker normal to surface
+      markerObj.lookAt(pos.clone().multiplyScalar(2));
 
       // 1. Inner core dot
-      const coreGeom = new THREE.CircleGeometry(loc.isBase ? 0.024 : 0.016, 24);
+      const coreGeom = new THREE.CircleGeometry(loc.isBase ? 0.024 : 0.016, isIOS ? 16 : 24);
       const coreMat = new THREE.MeshBasicMaterial({
         color: loc.isBase ? 0x60a5fa : 0xf8fafc,
         side: THREE.DoubleSide
@@ -994,7 +1170,7 @@ export class ThreeViewer {
       markerObj.add(coreMesh);
 
       // 2. Subtle pulsing ring
-      const ringGeom = new THREE.RingGeometry(loc.isBase ? 0.032 : 0.022, loc.isBase ? 0.044 : 0.032, 32);
+      const ringGeom = new THREE.RingGeometry(loc.isBase ? 0.032 : 0.022, loc.isBase ? 0.044 : 0.032, isIOS ? 20 : 32);
       const ringMat = new THREE.MeshBasicMaterial({
         color: loc.isBase ? 0x38bdf8 : 0x93c5fd,
         transparent: true,
@@ -1004,8 +1180,8 @@ export class ThreeViewer {
       const ringMesh = new THREE.Mesh(ringGeom, ringMat);
       markerObj.add(ringMesh);
 
-      // 3. Selection highlight outer ring (visible on active)
-      const selectGeom = new THREE.RingGeometry(loc.isBase ? 0.052 : 0.040, loc.isBase ? 0.060 : 0.046, 32);
+      // 3. Selection highlight outer ring
+      const selectGeom = new THREE.RingGeometry(loc.isBase ? 0.052 : 0.040, loc.isBase ? 0.060 : 0.046, isIOS ? 20 : 32);
       const selectMat = new THREE.MeshBasicMaterial({
         color: 0x38bdf8,
         transparent: true,
@@ -1015,8 +1191,8 @@ export class ThreeViewer {
       const selectMesh = new THREE.Mesh(selectGeom, selectMat);
       markerObj.add(selectMesh);
 
-      // 4. Invisible larger hit sphere for easy clicking/touching
-      const hitGeom = new THREE.SphereGeometry(0.08, 12, 12);
+      // 4. Hit sphere for click/touch interaction
+      const hitGeom = new THREE.SphereGeometry(0.08, 8, 8);
       const hitMat = new THREE.MeshBasicMaterial({ visible: false });
       const hitMesh = new THREE.Mesh(hitGeom, hitMat);
       hitMesh.userData = { location: loc, markerGroup: markerObj };
@@ -1039,18 +1215,16 @@ export class ThreeViewer {
       // 5. Curved 3D orbital connection arcs
       if (loc.connectedTo && loc.connectedTo.length > 0) {
         loc.connectedTo.forEach((targetId) => {
-          // Avoid duplicate lines (only draw if target index > current index or if from base)
           const targetLoc = CREATIVE_LOCATIONS.find(l => l.id === targetId);
           if (targetLoc && (loc.isBase || CREATIVE_LOCATIONS.indexOf(targetLoc) > idx)) {
             const destPos = this.latLonToVector3(targetLoc.lat, targetLoc.lon, this.earthRadius * 1.018);
             const dist = pos.distanceTo(destPos);
             const midPoint = pos.clone().lerp(destPos, 0.5);
-            // Elevate midpoint above globe curvature proportional to distance
             const elevation = this.earthRadius + dist * 0.28;
             midPoint.normalize().multiplyScalar(elevation);
 
             const curve = new THREE.QuadraticBezierCurve3(pos, midPoint, destPos);
-            const points = curve.getPoints(45);
+            const points = curve.getPoints(this.profile.arcPoints);
             const arcGeom = new THREE.BufferGeometry().setFromPoints(points);
 
             const arcMat = new THREE.LineBasicMaterial({
@@ -1081,8 +1255,8 @@ export class ThreeViewer {
       }
     });
 
-    // 6. Traveling Pulse Signal Mesh for World Signal animation
-    const signalGeom = new THREE.SphereGeometry(0.024, 16, 16);
+    // 6. Traveling pulse signal mesh
+    const signalGeom = new THREE.SphereGeometry(0.024, 10, 10);
     const signalMat = new THREE.MeshBasicMaterial({
       color: 0x38bdf8,
       transparent: true,
@@ -1091,7 +1265,6 @@ export class ThreeViewer {
     this.worldSignalPulseMesh = new THREE.Mesh(signalGeom, signalMat);
     this.markersGroup.add(this.worldSignalPulseMesh);
 
-    // Attach markers group to Earth model so they rotate in perfect unison
     if (earthMesh) {
       earthMesh.add(this.markersGroup);
     } else if (this.model) {
@@ -1103,12 +1276,13 @@ export class ThreeViewer {
     const rect = this.container.getBoundingClientRect();
     const clientX = e.touches && e.touches[0] ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches && e.touches[0] ? e.touches[0].clientY : e.clientY;
-    return {
-      x: ((clientX - rect.left) / rect.width) * 2 - 1,
-      y: -(((clientY - rect.top) / rect.height) * 2 - 1),
-      screenX: clientX - rect.left,
-      screenY: clientY - rect.top
-    };
+    const rw = rect.width || 1;
+    const rh = rect.height || 1;
+    this._pointerCoords.x = ((clientX - rect.left) / rw) * 2 - 1;
+    this._pointerCoords.y = -(((clientY - rect.top) / rh) * 2 - 1);
+    this._pointerCoords.screenX = clientX - rect.left;
+    this._pointerCoords.screenY = clientY - rect.top;
+    return this._pointerCoords;
   }
 
   setupRaycasting() {
@@ -1154,7 +1328,6 @@ export class ThreeViewer {
           this.selectLocation(loc);
         }
       } else {
-        // If clicking empty globe/space and panel is open, return to overview
         if (this.selectedLocation) {
           this.resetView();
         }
@@ -1164,29 +1337,36 @@ export class ThreeViewer {
     let touchStartX = 0;
     let touchStartY = 0;
 
-    this.container.addEventListener('mousemove', handlePointerMove, { passive: true });
-    this.container.addEventListener('click', handleClick);
-
-    this.container.addEventListener('touchstart', (e) => {
+    const onTouchStart = (e) => {
       if (e.touches && e.touches[0]) {
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
       }
-    }, { passive: true });
+    };
 
-    this.container.addEventListener('touchend', (e) => {
+    const onTouchEnd = (e) => {
       if (e.changedTouches && e.changedTouches[0]) {
         const dist = Math.hypot(e.changedTouches[0].clientX - touchStartX, e.changedTouches[0].clientY - touchStartY);
-        // Only treat as hotspot selection if finger did not drag to orbit the globe
         if (dist < 12) {
           handleClick(e.changedTouches[0]);
         }
       }
+    };
+
+    this.container.addEventListener('mousemove', handlePointerMove, { passive: true });
+    this.container.addEventListener('click', handleClick);
+    this.container.addEventListener('touchstart', onTouchStart, { passive: true });
+    this.container.addEventListener('touchend', onTouchEnd);
+
+    this._cleanups.push(() => {
+      this.container.removeEventListener('mousemove', handlePointerMove);
+      this.container.removeEventListener('click', handleClick);
+      this.container.removeEventListener('touchstart', onTouchStart);
+      this.container.removeEventListener('touchend', onTouchEnd);
     });
   }
 
   updateHoverState(loc, coords) {
-    // 1. Scale up hovered marker and dim others
     this.markerObjects.forEach(m => {
       if (m.data.id === loc.id) {
         m.ring.material.opacity = 1.0;
@@ -1198,7 +1378,6 @@ export class ThreeViewer {
       }
     });
 
-    // 2. Display 3D Screen Tooltip
     if (this.tooltipEl) {
       this.tooltipEl.textContent = `${loc.num} ${loc.country} · ${loc.city}`;
       this.tooltipEl.style.display = 'block';
@@ -1220,34 +1399,20 @@ export class ThreeViewer {
     }
   }
 
-  /**
-   * Primary Action: Select location, fly camera, calculate distance, and show intelligence card.
-   */
   selectLocation(loc) {
     if (!loc) return;
 
-    // Previous location for distance calculation
     const fromLoc = this.selectedLocation || this.previousSelectedLocation || CREATIVE_LOCATIONS[0];
     this.previousSelectedLocation = fromLoc;
     this.selectedLocation = loc;
 
-    // 1. Calculate Great-Circle Distance
     const distKm = calculateGreatCircleDistance(fromLoc.lat, fromLoc.lon, loc.lat, loc.lon);
     this.showDistanceIndicator(fromLoc, loc, distKm);
 
-    // 2. Fly camera smoothly
     this.flyToLocation(loc);
-
-    // 3. Show Location Intelligence Panel
     this.showLocationPanel(loc);
-
-    // 4. Update 20-Country directory button active state
     this.updateCountryDirectoryActive(loc.id);
-
-    // 5. Update World Live Clock strip promotion
     this.updateWorldLiveClock(loc.id);
-
-    // 6. Highlight active marker & connection arcs
     this.highlightActiveLocationVisuals(loc.id);
 
     this.fadeInteractionHint();
@@ -1260,27 +1425,19 @@ export class ThreeViewer {
     }
   }
 
-  /**
-   * Smooth camera fly-to animation with spherical arc interpolation to avoid clipping.
-   */
   flyToLocation(loc) {
     if (!loc) return;
-
-    // Find the marker object
     const marker = this.markerObjects.find(m => m.data.id === loc.id);
     if (!marker) return;
 
-    // Get world position of marker
     const markerWorldPos = new THREE.Vector3();
     marker.group.getWorldPosition(markerWorldPos);
 
-    // Stop auto-rotation during and after fly-to inspection
     this.isAutoRotating = false;
-    this.controls.autoRotate = false;
+    if (this.controls) this.controls.autoRotate = false;
     const btnAuto = this.container.querySelector('#three-btn-autorotate');
     if (btnAuto) btnAuto.classList.remove('active');
 
-    // Calculate camera target position along normal from center through marker
     const dir = markerWorldPos.clone().sub(this.controls.target).normalize();
     const targetDistance = 2.75;
 
@@ -1290,9 +1447,8 @@ export class ThreeViewer {
     this.flyStartDistance = this.camera.position.length();
     this.flyTargetDistance = targetDistance;
 
-    // Quaternions for smooth spherical slerp
-    this.flyStartQuat.setFromUnitVectors(new THREE.Vector3(0, 0, 1), this.flyStartPos.clone().normalize());
-    this.flyTargetQuat.setFromUnitVectors(new THREE.Vector3(0, 0, 1), this.flyTargetPos.clone().normalize());
+    this.flyStartQuat.setFromUnitVectors(this._unitZ, this.flyStartPos.clone().normalize());
+    this.flyTargetQuat.setFromUnitVectors(this._unitZ, this.flyTargetPos.clone().normalize());
 
     this.isFlying = true;
     this.flyStartTime = performance.now();
@@ -1323,16 +1479,12 @@ export class ThreeViewer {
 
     badge.classList.add('is-active');
 
-    // Auto fade out distance badge after 4.5 seconds
     if (this.distBadgeTimer) clearTimeout(this.distBadgeTimer);
     this.distBadgeTimer = setTimeout(() => {
       if (badge) badge.classList.remove('is-active');
     }, 4500);
   }
 
-  /**
-   * Populate and display the minimal floating location intelligence panel.
-   */
   showLocationPanel(loc) {
     const panel = document.getElementById('world-location-panel');
     const kickerEl = document.getElementById('world-panel-kicker');
@@ -1355,14 +1507,12 @@ export class ThreeViewer {
     if (countryEl) countryEl.textContent = loc.country;
     if (roleEl) roleEl.textContent = loc.role;
 
-    // Coordinates: e.g. 35.68° N · 139.65° E
     if (coordsEl) {
       const latDir = loc.lat >= 0 ? 'N' : 'S';
       const lonDir = loc.lon >= 0 ? 'E' : 'W';
       coordsEl.textContent = `${Math.abs(loc.lat).toFixed(2)}° ${latDir} · ${Math.abs(loc.lon).toFixed(2)}° ${lonDir}`;
     }
 
-    // Local time & Solar status (Day / Sunset / Night)
     const now = new Date();
     if (timeEl) {
       timeEl.textContent = `${getLocalTimeString(loc.timezone, now)} ${loc.tzAbbr}`;
@@ -1373,14 +1523,12 @@ export class ThreeViewer {
       solarEl.className = `world-stat-badge is-${solar.status.toLowerCase()}`;
     }
 
-    // Creative Focus disciplines
     if (tagsEl && loc.disciplines) {
       tagsEl.innerHTML = loc.disciplines.map(d => `
         <span class="world-panel-discipline-pill ${this.activeDiscipline === d ? 'is-active' : ''}">${d}</span>
       `).join('');
     }
 
-    // Connected locations
     if (connListEl && loc.connectedTo) {
       if (connCountEl) connCountEl.textContent = String(loc.connectedTo.length).padStart(2, '0');
       connListEl.innerHTML = loc.connectedTo.map(cid => {
@@ -1401,7 +1549,6 @@ export class ThreeViewer {
       });
     }
 
-    // Representative Portfolio Work
     if (projectsListEl && projectsWrapEl) {
       if (loc.projects && loc.projects.length > 0) {
         projectsWrapEl.style.display = 'block';
@@ -1413,7 +1560,6 @@ export class ThreeViewer {
           </button>
         `).join('');
 
-        // Wire project modal triggers
         projectsListEl.querySelectorAll('.world-panel-project-btn').forEach(btn => {
           btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -1429,12 +1575,11 @@ export class ThreeViewer {
     }
 
     panel.removeAttribute('hidden');
-    void panel.offsetWidth; // force reflow for transition
+    void panel.offsetWidth;
     panel.classList.add('is-visible');
   }
 
   highlightActiveLocationVisuals(locId) {
-    // Highlight marker rings
     this.markerObjects.forEach(m => {
       const isSelected = m.data.id === locId;
       if (isSelected) {
@@ -1448,7 +1593,6 @@ export class ThreeViewer {
       }
     });
 
-    // Highlight connecting arcs
     this.arcObjects.forEach(arc => {
       const isConnected = arc.from === locId || arc.to === locId;
       if (isConnected) {
@@ -1463,13 +1607,9 @@ export class ThreeViewer {
     });
   }
 
-  /**
-   * Filter active locations and connections by creative discipline.
-   */
   filterByDiscipline(discipline) {
     this.activeDiscipline = discipline || 'ALL';
 
-    // 1. Filter Location Markers
     this.markerObjects.forEach(m => {
       const isMatch = (this.activeDiscipline === 'ALL') || m.data.disciplines.includes(this.activeDiscipline);
       const isSelected = this.selectedLocation && m.data.id === this.selectedLocation.id;
@@ -1480,13 +1620,11 @@ export class ThreeViewer {
         m.ring.material.opacity = isSelected ? 1.0 : 0.65;
         m.hitBox.visible = true;
       } else {
-        // Dim irrelevant markers smoothly
         m.core.material.opacity = 0.2;
         m.ring.material.opacity = 0.12;
       }
     });
 
-    // 2. Filter Orbital Connection Arcs
     this.arcObjects.forEach(arc => {
       const isMatch = (this.activeDiscipline === 'ALL') || arc.disciplines.includes(this.activeDiscipline);
       const isSelected = this.selectedLocation && (arc.from === this.selectedLocation.id || arc.to === this.selectedLocation.id);
@@ -1502,7 +1640,6 @@ export class ThreeViewer {
       }
     });
 
-    // 3. Update Country Directory items visibility / active state
     const dirEl = document.getElementById('world-country-directory');
     if (dirEl) {
       dirEl.querySelectorAll('.world-country-chip').forEach(btn => {
@@ -1516,9 +1653,6 @@ export class ThreeViewer {
     }
   }
 
-  /**
-   * Build 20-Country Quick Navigation Directory
-   */
   buildCountryDirectory() {
     const dirContainer = document.getElementById('world-country-directory');
     if (!dirContainer) return;
@@ -1552,9 +1686,6 @@ export class ThreeViewer {
     });
   }
 
-  /**
-   * Build & Update Live World Clock Strip (Continuous 15-City Horizontal Marquee)
-   */
   buildLiveWorldClock() {
     const clockStrip = document.getElementById('world-live-clock-strip');
     if (!clockStrip) return;
@@ -1594,7 +1725,6 @@ export class ThreeViewer {
       </div>
     `;
 
-    // Click handler on chips to focus country in 3D globe
     clockStrip.querySelectorAll('.world-clock-chip').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-location-id');
@@ -1607,7 +1737,6 @@ export class ThreeViewer {
     const clockStrip = document.getElementById('world-live-clock-strip');
     if (!clockStrip) return;
 
-    // Ensure initial marquee DOM is built
     if (!clockStrip.querySelector('.world-clock-marquee-track')) {
       this.buildLiveWorldClock();
       return;
@@ -1615,7 +1744,6 @@ export class ThreeViewer {
 
     const now = new Date();
 
-    // In-place live update of all 15 location clocks across primary & secondary marquee tracks
     MARQUEE_LOCATIONS.forEach(loc => {
       const chips = clockStrip.querySelectorAll(`.world-clock-chip[data-loc-city="${loc.city}"]`);
       if (chips.length > 0) {
@@ -1630,14 +1758,12 @@ export class ThreeViewer {
           if (timeEl && timeEl.textContent !== timeStr) {
             timeEl.textContent = timeStr;
           }
-          // Maintain active selection styling if selectedLocation matches
           const isSelected = this.selectedLocation && this.selectedLocation.id === loc.id;
           chip.classList.toggle('is-selected', !!isSelected);
         });
       }
     });
 
-    // 2. Update time in open location panel
     if (this.selectedLocation) {
       const panelTime = document.getElementById('world-panel-time');
       const panelSolar = document.getElementById('world-panel-solar');
@@ -1650,7 +1776,6 @@ export class ThreeViewer {
       }
     }
 
-    // 3. Update sun position continuously
     this.updateSunPosition();
   }
 
@@ -1658,12 +1783,10 @@ export class ThreeViewer {
     this.updateLiveClocks();
   }
 
-  /**
-   * Autonomous World Signal loop: sends a data pulse along connection arcs
-   */
   startWorldSignalLoop() {
-    setInterval(() => {
-      if (this.isPaused || this.isInteracting || this.isFlying) return;
+    if (this.worldSignalTimer) clearInterval(this.worldSignalTimer);
+    this.worldSignalTimer = setInterval(() => {
+      if (this.isPaused || this.isOffscreen || this.isInteracting || this.isFlying || !this.isRendering) return;
       this.triggerNextWorldSignal();
     }, 4500);
   }
@@ -1695,6 +1818,33 @@ export class ThreeViewer {
     if (!this.model) return;
     const isWireframe = this.renderMode === 'wireframe';
 
+    // Lazy wireframe mesh creation
+    if (isWireframe && this.wireframeObjects.length === 0) {
+      this.model.traverse((child) => {
+        if (child.isMesh && (child === this.earthMesh || (child.name || '').toLowerCase().includes('earth'))) {
+          const wireGeom = new THREE.WireframeGeometry(child.geometry);
+          const wireMat = new THREE.LineBasicMaterial({
+            color: 0x60a5fa,
+            transparent: true,
+            opacity: 0.4,
+            linewidth: 1
+          });
+          const wireLines = new THREE.LineSegments(wireGeom, wireMat);
+          child.add(wireLines);
+
+          child.userData.wireframeLines = wireLines;
+          child.userData.wireframeCoreMat = new THREE.MeshBasicMaterial({
+            color: 0x06080c,
+            polygonOffset: true,
+            polygonOffsetFactor: 1,
+            polygonOffsetUnits: 1
+          });
+
+          this.wireframeObjects.push({ wireGeom, wireMat, coreMat: child.userData.wireframeCoreMat });
+        }
+      });
+    }
+
     this.model.traverse((child) => {
       if (child.isMesh) {
         const name = (child.name || '').toLowerCase();
@@ -1725,7 +1875,6 @@ export class ThreeViewer {
   }
 
   buildControlsUI() {
-    // Top-left Segmented Toggle: SOLID | WIREFRAME
     const topBar = document.createElement('div');
     topBar.className = 'three-hud-topbar';
     topBar.innerHTML = `
@@ -1793,17 +1942,19 @@ export class ThreeViewer {
       btnFs.addEventListener('click', () => this.toggleFullscreen());
     }
 
-    document.addEventListener('fullscreenchange', () => {
+    const onFullscreenChange = () => {
       if (!document.fullscreenElement && btnFs) {
         btnFs.querySelector('.three-hud-label').textContent = 'EXPAND';
       }
       this.onResize();
-    });
+    };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    this._cleanups.push(() => document.removeEventListener('fullscreenchange', onFullscreenChange));
   }
 
   toggleAutoRotate() {
     this.isAutoRotating = !this.isAutoRotating;
-    this.controls.autoRotate = this.isAutoRotating;
+    if (this.controls) this.controls.autoRotate = this.isAutoRotating;
     const btnAuto = this.container.querySelector('#three-btn-autorotate');
     if (btnAuto) btnAuto.classList.toggle('active', this.isAutoRotating);
     this.fadeInteractionHint();
@@ -1829,28 +1980,25 @@ export class ThreeViewer {
     this.isFlying = false;
     this.selectedLocation = null;
 
-    // Reset camera position & target
-    this.camera.position.copy(this.defaultCamPos);
-    this.controls.target.copy(this.defaultTarget);
-    this.controls.update();
+    if (this.camera && this.controls) {
+      this.camera.position.copy(this.defaultCamPos);
+      this.controls.target.copy(this.defaultTarget);
+      this.controls.update();
+    }
 
-    // Close location panel
     const panel = document.getElementById('world-location-panel');
     if (panel) {
       panel.classList.remove('is-visible');
       panel.setAttribute('hidden', '');
     }
 
-    // Hide distance badge
     const badge = document.getElementById('world-distance-badge');
     if (badge) badge.classList.remove('is-active');
 
-    // Reset visual highlights
     this.clearHoverState();
     this.updateCountryDirectoryActive(null);
 
-    // Resume auto-rotation if not reduced motion
-    if (!this.prefersReducedMotion) {
+    if (!this.prefersReducedMotion && this.controls) {
       this.isAutoRotating = true;
       this.controls.autoRotate = true;
       const btnAuto = this.container.querySelector('#three-btn-autorotate');
@@ -1862,46 +2010,74 @@ export class ThreeViewer {
     if (!this.container || !this.renderer || !this.camera) return;
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
-    if (width === 0 || height === 0) return;
+    if (width <= 0 || height <= 0) return;
 
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(width, height);
-    const isMobile = window.innerWidth < 768 || (navigator.maxTouchPoints && navigator.maxTouchPoints > 1);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.2 : 1.5));
+    this.renderer.setSize(width, height, false);
+    const dpr = Math.min(window.devicePixelRatio || 1, this.profile.maxDpr);
+    this.renderer.setPixelRatio(dpr);
   }
 
   easeInOutCubic(t) {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   }
 
-  animate() {
-    // Cease scheduling frames when off-screen or tab hidden (0% CPU / GPU consumption)
-    if (this.isPaused) {
-      this.animId = null;
+  startAnimation() {
+    if (this.isRendering || this.isPaused || this.isOffscreen || worldzUnavailable) return;
+    this.isRendering = true;
+    console.log('[WORLDZ] animation started');
+    this.lastFrameTime = performance.now();
+    this.animationFrameId = requestAnimationFrame((t) => this.animate(t));
+  }
+
+  stopAnimation() {
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
+    if (this.isRendering) {
+      this.isRendering = false;
+      console.log('[WORLDZ] animation stopped');
+    }
+  }
+
+  animate(now = performance.now()) {
+    if (!this.isRendering || this.isPaused || this.isOffscreen || worldzUnavailable) {
+      this.isRendering = false;
+      this.animationFrameId = null;
       return;
     }
 
-    this.animId = requestAnimationFrame(() => this.animate());
+    this.animationFrameId = requestAnimationFrame((t) => this.animate(t));
+
+    // Mobile / iOS frame rate throttling
+    const elapsed = now - this.lastFrameTime;
+    if (elapsed < this.profile.frameInterval) {
+      return; // Skip rendering frame until frame interval elapses
+    }
+    this.lastFrameTime = now - (elapsed % this.profile.frameInterval);
+
+    // Guard against hidden or zero-size container
+    if (!this.container || this.container.clientWidth <= 0 || this.container.clientHeight <= 0) {
+      return;
+    }
 
     this.time += 0.02;
 
     // Camera Fly-To Animation with collision-free spherical interpolation
     if (this.isFlying) {
-      const elapsed = performance.now() - this.flyStartTime;
-      const progress = Math.min(elapsed / this.flyDuration, 1.0);
+      const flyElapsed = performance.now() - this.flyStartTime;
+      const progress = Math.min(flyElapsed / this.flyDuration, 1.0);
       const eased = this.easeInOutCubic(progress);
 
-      // Slerp direction on sphere
-      const curQuat = new THREE.Quaternion();
-      curQuat.slerpQuaternions(this.flyStartQuat, this.flyTargetQuat, eased);
-      const dir = new THREE.Vector3(0, 0, 1).applyQuaternion(curQuat);
+      this._scratchQuat_1.slerpQuaternions(this.flyStartQuat, this.flyTargetQuat, eased);
+      this._scratchVec3_1.copy(this._unitZ).applyQuaternion(this._scratchQuat_1);
 
-      // Elevation curve to arch over globe without clipping
       const dist = THREE.MathUtils.lerp(this.flyStartDistance, this.flyTargetDistance, eased) +
                    0.38 * Math.sin(progress * Math.PI);
 
-      this.camera.position.copy(this.controls.target).add(dir.multiplyScalar(dist));
+      this.camera.position.copy(this.controls.target).add(this._scratchVec3_1.multiplyScalar(dist));
       this.controls.update();
 
       if (progress >= 1.0) {
@@ -1918,7 +2094,8 @@ export class ThreeViewer {
 
     // Gentle pulse animation on location markers
     if (this.markerObjects.length > 0) {
-      this.markerObjects.forEach(m => {
+      for (let i = 0; i < this.markerObjects.length; i++) {
+        const m = this.markerObjects[i];
         const pulse = Math.sin(this.time * 2.8 + m.phase);
         const scale = m.baseScale * (1.0 + 0.18 * pulse);
         m.ring.scale.setScalar(scale);
@@ -1932,15 +2109,15 @@ export class ThreeViewer {
         } else if (isMatch) {
           m.ring.material.opacity = 0.45 + 0.35 * pulse;
         }
-      });
+      }
     }
 
     // World Signal Pulse along connection arc
     if (this.worldSignalArc && this.worldSignalPulseMesh) {
       this.worldSignalProgress += 0.018;
       if (this.worldSignalProgress <= 1.0) {
-        const pt = this.worldSignalArc.curve.getPoint(this.worldSignalProgress);
-        this.worldSignalPulseMesh.position.copy(pt);
+        this.worldSignalArc.curve.getPoint(this.worldSignalProgress, this._scratchVec3_2);
+        this.worldSignalPulseMesh.position.copy(this._scratchVec3_2);
         this.worldSignalPulseMesh.material.opacity = Math.sin(this.worldSignalProgress * Math.PI) * 0.95;
       } else {
         this.worldSignalArc = null;
@@ -1954,25 +2131,123 @@ export class ThreeViewer {
     }
   }
 
+  gracefullyDisableWorldz(error) {
+    console.warn('[WORLDZ] Gracefully disabling 3D Earth module:', error);
+    if (this.loadingEl && this.loadingEl.parentNode) {
+      this.loadingEl.parentNode.removeChild(this.loadingEl);
+    }
+
+    const fallback = document.createElement('div');
+    fallback.className = 'three-fallback-view';
+    fallback.style.cssText = 'position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, #0f172a 0%, #05070c 100%); color: #94a3b8; text-align: center; padding: 2rem; z-index: 2;';
+    fallback.innerHTML = `
+      <div style="width: 140px; height: 140px; border-radius: 50%; overflow: hidden; margin-bottom: 1.5rem; border: 1px solid rgba(56, 189, 248, 0.3); box-shadow: 0 0 30px rgba(56, 189, 248, 0.15);">
+        <img src="assets/3d/EARTH3D.webp" alt="Global Creative Network" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.9;" />
+      </div>
+      <span style="font-family: 'Space Grotesk', monospace; font-size: 11px; letter-spacing: 0.18em; color: #38bdf8; margin-bottom: 0.5rem;">GLOBAL CREATIVE NETWORK</span>
+      <p style="font-size: 13px; max-width: 320px; line-height: 1.5; color: #cbd5e1; margin: 0;">20 Studio hubs connected worldwide. Select any node from the directory to inspect location intelligence.</p>
+    `;
+    this.container.appendChild(fallback);
+
+    if (this.isMainViewer) {
+      this.buildCountryDirectory();
+      this.buildLiveWorldClock();
+    }
+  }
+
   destroy() {
-    if (this.animId) cancelAnimationFrame(this.animId);
-    if (this.clockInterval) clearInterval(this.clockInterval);
-    if (this.idleTimer) clearTimeout(this.idleTimer);
-    if (this.distBadgeTimer) clearTimeout(this.distBadgeTimer);
-    if (this.resizeObserver) this.resizeObserver.disconnect();
-    if (this.intersectionObserver) this.intersectionObserver.disconnect();
+    this.stopAnimation();
+
+    if (this.clockInterval) {
+      clearInterval(this.clockInterval);
+      this.clockInterval = null;
+    }
+    if (this.worldSignalTimer) {
+      clearInterval(this.worldSignalTimer);
+      this.worldSignalTimer = null;
+    }
+    if (this.idleTimer) {
+      clearTimeout(this.idleTimer);
+      this.idleTimer = null;
+    }
+    if (this.distBadgeTimer) {
+      clearTimeout(this.distBadgeTimer);
+      this.distBadgeTimer = null;
+    }
+    if (this.resizeRafId) {
+      cancelAnimationFrame(this.resizeRafId);
+      this.resizeRafId = null;
+    }
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
+    if (this.intersectionObserver) {
+      this.intersectionObserver.disconnect();
+      this.intersectionObserver = null;
+    }
+    if (this.onVisibilityChange) {
+      document.removeEventListener('visibilitychange', this.onVisibilityChange);
+    }
+
+    this._cleanups.forEach((cleanup) => {
+      try { cleanup(); } catch (e) {}
+    });
+    this._cleanups = [];
 
     this.wireframeObjects.forEach((obj) => {
       if (obj.wireGeom) obj.wireGeom.dispose();
       if (obj.wireMat) obj.wireMat.dispose();
       if (obj.coreMat) obj.coreMat.dispose();
     });
+    this.wireframeObjects = [];
+
+    if (this.scene) {
+      this.scene.traverse((child) => {
+        if (child.isMesh || child.isPoints || child.isLine) {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) {
+            if (Array.isArray(child.material)) {
+              child.material.forEach((m) => {
+                if (m.map) m.map.dispose();
+                m.dispose();
+              });
+            } else {
+              if (child.material.map) child.material.map.dispose();
+              child.material.dispose();
+            }
+          }
+        }
+      });
+    }
+
+    if (this.controls) {
+      this.controls.dispose();
+      this.controls = null;
+    }
 
     if (this.renderer) {
-      this.renderer.dispose();
-      if (this.renderer.domElement && this.renderer.domElement.parentNode) {
-        this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+      const dom = this.renderer.domElement;
+      if (dom) {
+        if (this.onContextLost) dom.removeEventListener('webglcontextlost', this.onContextLost);
+        if (this.onContextRestored) dom.removeEventListener('webglcontextrestored', this.onContextRestored);
+        if (dom.parentNode) dom.parentNode.removeChild(dom);
       }
+      this.renderer.dispose();
+      this.renderer = null;
     }
+
+    if (this.isMainViewer) {
+      worldzInitialized = false;
+      worldzInitializing = false;
+      worldzMainInstance = null;
+    }
+  }
+}
+
+export function disposeWorldz() {
+  if (worldzMainInstance) {
+    worldzMainInstance.destroy();
+    worldzMainInstance = null;
   }
 }
