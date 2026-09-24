@@ -36,6 +36,9 @@
   <link rel="stylesheet" href="css/components.css?v=2.3" />
   <link rel="stylesheet" href="css/responsive.css?v=2.3" />
 
+  <!-- High-Priority Preload for First Motion Frame (Zero-Flash Instant Render) -->
+  <link rel="preload" as="image" href="assets/background/motion/00001.webp" type="image/webp" fetchpriority="high" />
+
   <!-- Three.js ES Module Import Map -->
   <script type="importmap">
   {
@@ -324,9 +327,12 @@
 
 
             <div class="freelance-showcase" id="freelance-intro-showcase">
-              <img src="assets/freelance/FREELANCE_IMAGE2.png"
-                alt="Sivasuriya — Freelance Visual Design Experience & Studio Artifacts" loading="lazy" decoding="async"
-                width="1536" height="1024" />
+              <picture>
+                <source srcset="assets/freelance/FREELANCE_IMAGE2.webp" type="image/webp" />
+                <img src="assets/freelance/FREELANCE_IMAGE2.png"
+                  alt="Sivasuriya — Freelance Visual Design Experience & Studio Artifacts" loading="lazy" decoding="async"
+                  width="1536" height="1024" />
+              </picture>
             </div>
           </div>
         </div>
