@@ -4,7 +4,7 @@
  */
 
 import { PORTFOLIO_INFO, DISCIPLINES, SERVICES, PROJECTS, TOOL_CATEGORIES, TOOL_ARCHIVE_ROWS, EXPERIENCES } from './data.js';
-import { MotionBackgroundPlayer } from './bg-player.js?v=2.3';
+import { MotionBackgroundPlayer } from './bg-player.js?v=3.0';
 import { Lightbox } from './lightbox.js';
 
 // SVG Icon Library for Tools & UI (24x24 viewBox, crisp inline rendering)
@@ -82,8 +82,8 @@ class PortfolioApp {
   init() {
     window.app = this;
 
-    // 1. Initialize 300 PNG Background Player
-    this.motionPlayer = new MotionBackgroundPlayer('bg-canvas');
+    // 1. Initialize Motion Background Video Player
+    this.motionPlayer = new MotionBackgroundPlayer('bg-video');
 
     // 2. Initialize Lightbox
     this.lightbox = new Lightbox();
@@ -140,6 +140,8 @@ class PortfolioApp {
     const canvas = document.getElementById('hero-connect-canvas');
     if (!btn || !viewport) return;
 
+    let isHovered = false;
+
     // 1. Synchronized Motion Texture on internal button canvas
     if (canvas && this.motionPlayer && typeof this.motionPlayer.registerFrameObserver === 'function') {
       const ctx = canvas.getContext('2d');
@@ -160,14 +162,14 @@ class PortfolioApp {
       resizeCanvas();
       window.addEventListener('resize', resizeCanvas, { passive: true });
 
-      this.motionPlayer.registerFrameObserver((img) => {
+      this.motionPlayer.registerFrameObserver((source) => {
         if (!canvas.width || !canvas.height) resizeCanvas();
-        if (!canvas.width || !canvas.height || !img) return;
+        if (!canvas.width || !canvas.height || !source) return;
 
         const cw = canvas.width;
         const ch = canvas.height;
-        const nw = img.naturalWidth || 1280;
-        const nh = img.naturalHeight || 720;
+        const nw = source.naturalWidth || source.videoWidth || source.width || 640;
+        const nh = source.naturalHeight || source.videoHeight || source.height || 360;
         if (nw === 0 || nh === 0) return;
 
         // Cover fill algorithm preserving aspect ratio
@@ -177,8 +179,30 @@ class PortfolioApp {
         const dx = (cw - sw) / 2;
         const dy = (ch - sh) / 2;
 
-        ctx.drawImage(img, dx, dy, sw, sh);
+        ctx.drawImage(source, dx, dy, sw, sh);
       });
+
+      // On-demand sampling lifecycle: sample ONLY when Connect button is in viewport and active
+      let isButtonIntersecting = true;
+      const updateSamplingState = () => {
+        const shouldSample = isButtonIntersecting && !isHovered && !document.hidden;
+        if (typeof this.motionPlayer.setSamplingActive === 'function') {
+          this.motionPlayer.setSamplingActive(shouldSample);
+        }
+      };
+
+      if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            isButtonIntersecting = entry.isIntersecting;
+            updateSamplingState();
+          });
+        }, { threshold: 0.05 });
+        observer.observe(btn);
+      }
+
+      this.updateConnectSamplingState = updateSamplingState;
+      updateSamplingState();
     }
 
     // 2. Continuous Sequential Phrase Rotation
@@ -239,7 +263,6 @@ class PortfolioApp {
     };
 
     // Continuous indefinite rotation
-    let isHovered = false;
     let rotationTimer = setInterval(rotatePhrase, ROTATION_INTERVAL);
 
     const pauseRotation = () => {
@@ -259,6 +282,7 @@ class PortfolioApp {
     btn.addEventListener('mouseenter', () => {
       isHovered = true;
       pauseRotation();
+      if (this.updateConnectSamplingState) this.updateConnectSamplingState();
 
       // Cleanly resolve any in-flight transition so text is firmly frozen
       const exiting = viewport.querySelectorAll('.hero-connect-phrase--exit');
@@ -274,6 +298,7 @@ class PortfolioApp {
     btn.addEventListener('mouseleave', () => {
       isHovered = false;
       resumeRotation();
+      if (this.updateConnectSamplingState) this.updateConnectSamplingState();
     });
 
     // Pause on hidden tab to save CPU/battery, resume when tab is active
@@ -283,6 +308,7 @@ class PortfolioApp {
       } else {
         resumeRotation();
       }
+      if (this.updateConnectSamplingState) this.updateConnectSamplingState();
     });
   }
 
