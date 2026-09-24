@@ -2441,11 +2441,28 @@
   display: flex;
   flex-direction: column;
   cursor: pointer;
+  position: relative;
+  transform-style: preserve-3d;
+  will-change: transform;
   transition: border-color var(--transition-fast), transform var(--transition-fast);
 }
 
 .archive-card:hover {
   border-color: var(--border-strong);
+}
+
+.archive-card::after,
+.showcase-row::after,
+.discipline-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle 380px at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255, 255, 255, 0.08) 0%, transparent 65%);
+  opacity: var(--glare-opacity, 0);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 10;
 }
 
 .archive-card-thumb {
@@ -2458,6 +2475,40 @@
   justify-content: center;
   padding: 0.65rem;
   border-bottom: 1px solid var(--border-subtle);
+}
+
+/* Subtle Sequential Image Hover Scrubber Track */
+.archive-scrub-track {
+  position: absolute;
+  bottom: 0.6rem;
+  left: 0.85rem;
+  right: 0.85rem;
+  height: 2.5px;
+  display: flex;
+  gap: 3px;
+  z-index: 5;
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+}
+
+.archive-card:hover .archive-scrub-track {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.archive-scrub-segment {
+  flex: 1;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 1px;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.archive-scrub-segment.active {
+  background: #38bdf8;
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.7);
 }
 
 .archive-card-thumb img {

@@ -584,13 +584,15 @@ export class ThreeViewer {
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.container.appendChild(this.renderer.domElement);
 
-    // OrbitControls with smooth inertia damping
+    // OrbitControls with smooth inertia damping & mobile touch pinch-zoom
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
     this.controls.autoRotate = this.isAutoRotating;
     this.controls.autoRotateSpeed = this.autoRotateBaseSpeed;
     this.controls.enableZoom = true;
+    this.controls.enableRotate = true;
+    this.controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
     this.controls.minDistance = 1.65;
     this.controls.maxDistance = 7.5;
     this.controls.enablePan = true;
@@ -827,8 +829,9 @@ export class ThreeViewer {
             // Atmosphere subtle cyan-blue glow
             if (name.includes('atmosphere') || matName.includes('atmosphere')) {
               child.material.transparent = true;
-              child.material.opacity = 0.24;
+              child.material.opacity = 0.28;
               child.material.depthWrite = false;
+              child.material.blending = THREE.AdditiveBlending;
               if (child.material.color) {
                 child.material.color.setHex(0x38bdf8);
               }
@@ -1144,11 +1147,26 @@ export class ThreeViewer {
       }
     };
 
+    let touchStartX = 0;
+    let touchStartY = 0;
+
     this.container.addEventListener('mousemove', handlePointerMove, { passive: true });
     this.container.addEventListener('click', handleClick);
+
+    this.container.addEventListener('touchstart', (e) => {
+      if (e.touches && e.touches[0]) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+
     this.container.addEventListener('touchend', (e) => {
       if (e.changedTouches && e.changedTouches[0]) {
-        handleClick(e.changedTouches[0]);
+        const dist = Math.hypot(e.changedTouches[0].clientX - touchStartX, e.changedTouches[0].clientY - touchStartY);
+        // Only treat as hotspot selection if finger did not drag to orbit the globe
+        if (dist < 12) {
+          handleClick(e.changedTouches[0]);
+        }
       }
     });
   }

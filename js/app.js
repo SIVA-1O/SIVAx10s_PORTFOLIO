@@ -6,6 +6,7 @@
 import { PORTFOLIO_INFO, DISCIPLINES, SERVICES, PROJECTS, TOOL_CATEGORIES, TOOL_ARCHIVE_ROWS, EXPERIENCES } from './data.js';
 import { MotionBackgroundPlayer } from './bg-player.js?v=3.0';
 import { Lightbox } from './lightbox.js';
+import { InteractivityEngine } from './interactive.js?v=3.0';
 
 // SVG Icon Library for Tools & UI (24x24 viewBox, crisp inline rendering)
 const TOOL_ICONS = {
@@ -75,6 +76,7 @@ class PortfolioApp {
     this.lightbox = null;
     this.threeViewer = null;
     this.motionPlayer = null;
+    this.interactivity = null;
 
     this.init();
   }
@@ -109,6 +111,9 @@ class PortfolioApp {
     this.setupModalRouting();
     this.setupTimeClock();
     this.setupAudioSound();
+
+    // 6. High-Impact Restrained Interactivity Engine
+    this.interactivity = new InteractivityEngine();
   }
 
   /* ------------------------------------------------------------------------
@@ -560,6 +565,10 @@ class PortfolioApp {
             <div class="archive-card-secondary-tags">
               ${secTags}
             </div>
+            <div class="archive-quick-dossier-btn" aria-label="Open Project Dossier">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              <span>VIEW DOSSIER</span>
+            </div>
           </div>
         </article>
       `;
@@ -571,6 +580,10 @@ class PortfolioApp {
         this.openProjectModal(pid);
       });
     });
+
+    if (this.interactivity && typeof this.interactivity.refreshCards === 'function') {
+      this.interactivity.refreshCards();
+    }
   }
 
   /* ------------------------------------------------------------------------
