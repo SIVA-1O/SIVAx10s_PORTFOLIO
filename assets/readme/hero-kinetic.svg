@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" width="100%" height="260">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;800;900&amp;display=swap');
+      .font-sans {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      }
+      .font-mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      }
+      
+      /* Slow, restrained, editorial kinetic cycle */
+      .k-item {
+        opacity: 0;
+        animation: kineticShift 24s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+        transform-origin: left center;
+      }
+      .k1 { animation-delay: 0s; }
+      .k2 { animation-delay: 3s; }
+      .k3 { animation-delay: 6s; }
+      .k4 { animation-delay: 9s; }
+      .k5 { animation-delay: 12s; }
+      .k6 { animation-delay: 15s; }
+      .k7 { animation-delay: 18s; }
+      .k8 { animation-delay: 21s; }
+
+      @keyframes kineticShift {
+        0% {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        2%, 10.5% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        12.5%, 100% {
+          opacity: 0;
+          transform: translateY(-8px);
+        }
+      }
+
+      .subtle-pulse {
+        animation: slowPulse 4s ease-in-out infinite;
+      }
+      @keyframes slowPulse {
+        0%, 100% { opacity: 0.9; }
+        50% { opacity: 0.35; }
+      }
+    </style>
+  </defs>
+
+  <!-- Editorial Card Background -->
+  <rect width="900" height="260" fill="#0A0A0A" stroke="#1E1E1E" stroke-width="1"/>
+
+  <!-- Top Metadata Bar -->
+  <text x="32" y="38" class="font-mono" font-size="10" font-weight="500" fill="#E5E5E5" letter-spacing="3">SIVASURIYA</text>
+  <text x="450" y="38" text-anchor="middle" class="font-mono" font-size="9" font-weight="400" fill="#666666" letter-spacing="3">STUDIO ARCHIVE • 2026</text>
+  <text x="868" y="38" text-anchor="end" class="font-mono" font-size="9" font-weight="400" fill="#888888" letter-spacing="2">VOL. 02 / EDITION 01</text>
+
+  <!-- Top Hairline Divider -->
+  <line x1="32" y1="52" x2="868" y2="52" stroke="#1A1A1A" stroke-width="1"/>
+
+  <!-- Hero Title -->
+  <text x="32" y="98" class="font-sans" font-size="28" font-weight="900" fill="#FFFFFF" letter-spacing="-0.5">MULTIDISCIPLINARY</text>
+  <text x="32" y="132" class="font-sans" font-size="28" font-weight="900" fill="#FFFFFF" letter-spacing="-0.5">GRAPHIC DESIGNER / VISUAL DESIGNER</text>
+
+  <!-- Mid Hairline Divider -->
+  <line x1="32" y1="156" x2="868" y2="156" stroke="#1A1A1A" stroke-width="1"/>
+
+  <!-- Kinetic Typography Focus Area -->
+  <text x="32" y="196" class="font-mono" font-size="10" font-weight="500" fill="#555555" letter-spacing="3">CURRENT PRACTICE //</text>
+
+  <!-- Cycling Words: IDENTITY, IMAGE, TYPE, DIGITAL, MOTION, SPACE, 3D, EXPERIMENT -->
+  <g transform="translate(195, 0)">
+    <text x="0" y="198" class="font-sans k-item k1" font-size="17" font-weight="800" fill="#FFFFFF" letter-spacing="5">IDENTITY</text>
+    <text x="0" y="198" class="font-sans k-item k2" font-size="17" font-weight="800" fill="#FFFFFF" letter-spacing="5">IMAGE</text>
+    <text x="0" y="198" class="font-sans k-item k3" font-size="17" font-weight="800" fill="#FFFFFF" letter-spacing="5">TYPE</text>
+    <text x="0" y="198" class="font-sans k-item k4" font-size="17" font-weight="800" fill="#FFFFFF" letter-spacing="5">DIGITAL</text>
+    <text x="0" y="198" class="font-sans k-item k5" font-size="17" font-weight="800" fill="#FFFFFF" letter-spacing="5">MOTION</text>
+    <text x="0" y="198" class="font-sans k-item k6" font-size="17" font-weight="800" fill="#FFFFFF" letter-spacing="5">SPACE</text>
+    <text x="0" y="198" class="font-sans k-item k7" font-size="17" font-weight="800" fill="#FFFFFF" letter-spacing="5">3D</text>
+    <text x="0" y="198" class="font-sans k-item k8" font-size="17" font-weight="800" fill="#FFFFFF" letter-spacing="5">EXPERIMENT</text>
+  </g>
+
+  <!-- Live Pulse Dot on Right -->
+  <circle cx="830" cy="192" r="3.5" fill="#E5E5E5" class="subtle-pulse"/>
+  <text x="842" y="196" class="font-mono" font-size="9" font-weight="500" fill="#888888" letter-spacing="2">ACTIVE</text>
+
+  <!-- Bottom Hairline Divider -->
+  <line x1="32" y1="222" x2="868" y2="222" stroke="#1A1A1A" stroke-width="1"/>
+
+  <!-- Bottom Metadata -->
+  <text x="32" y="243" class="font-mono" font-size="8.5" font-weight="400" fill="#555555" letter-spacing="2">LOCATION: CHENNAI, IN [ 13°05'N 80°16'E ]</text>
+  <text x="868" y="243" text-anchor="end" class="font-mono" font-size="8.5" font-weight="400" fill="#777777" letter-spacing="2">IDENTITY / IMAGE / TYPOGRAPHY / DIGITAL / MOTION / 3D</text>
+</svg>
