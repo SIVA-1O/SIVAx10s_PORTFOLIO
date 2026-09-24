@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 80" width="100%" height="80">
+  <defs>
+    <linearGradient id="workBorderGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="50%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#EC4899"/>
+    </linearGradient>
+    <linearGradient id="scanBeam" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#38BDF8" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#818CF8" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <style>
+    .font-sans {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .font-mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+    .beam-motion {
+      animation: beamMove 5s linear infinite;
+    }
+    @keyframes beamMove {
+      0% { transform: translateX(-900px); }
+      100% { transform: translateX(900px); }
+    }
+    .project-chip {
+      transition: all 0.3s ease;
+    }
+  </style>
+
+  <!-- Box -->
+  <rect width="900" height="80" rx="10" fill="#0A0C13" stroke="#1E2332" stroke-width="1.2"/>
+
+  <!-- Scanning beam -->
+  <rect x="0" y="0.5" width="240" height="1.5" fill="url(#scanBeam)" class="beam-motion"/>
+
+  <!-- Top Title -->
+  <text x="30" y="28" class="font-mono" font-size="10.5" font-weight="700" fill="#38BDF8" letter-spacing="2.5">
+    ✦ FEATURED CASE STUDIES // EDITORIAL ARCHIVE
+  </text>
+  <text x="870" y="28" text-anchor="end" class="font-mono" font-size="10" fill="#64748B" letter-spacing="2">
+    4 PROJECTS SELECTED
+  </text>
+
+  <!-- Projects Bar -->
+  <g transform="translate(30, 42)">
+    <!-- Project 1: ZESIS -->
+    <rect x="0" y="0" width="195" height="26" rx="6" fill="#111624" stroke="#1E293B" stroke-width="1"/>
+    <text x="12" y="17" class="font-mono" font-size="11" font-weight="700" fill="#F8FAFC" letter-spacing="2">ZESIS</text>
+    <text x="183" y="17" text-anchor="end" class="font-mono" font-size="9" fill="#94A3B8" letter-spacing="1">BRANDING</text>
+
+    <!-- Project 2: EMYSC -->
+    <rect x="215" y="0" width="195" height="26" rx="6" fill="#111624" stroke="#1E293B" stroke-width="1"/>
+    <text x="227" y="17" class="font-mono" font-size="11" font-weight="700" fill="#F8FAFC" letter-spacing="2">EMYSC</text>
+    <text x="398" y="17" text-anchor="end" class="font-mono" font-size="9" fill="#94A3B8" letter-spacing="1">EDITORIAL</text>
+
+    <!-- Project 3: MKEGG -->
+    <rect x="430" y="0" width="195" height="26" rx="6" fill="#111624" stroke="#1E293B" stroke-width="1"/>
+    <text x="442" y="17" class="font-mono" font-size="11" font-weight="700" fill="#F8FAFC" letter-spacing="2">MKEGG</text>
+    <text x="613" y="17" text-anchor="end" class="font-mono" font-size="9" fill="#94A3B8" letter-spacing="1">DIGITAL</text>
+
+    <!-- Project 4: ARIMM -->
+    <rect x="645" y="0" width="195" height="26" rx="6" fill="#111624" stroke="#1E293B" stroke-width="1"/>
+    <text x="657" y="17" class="font-mono" font-size="11" font-weight="700" fill="#F8FAFC" letter-spacing="2">ARIMM</text>
+    <text x="828" y="17" text-anchor="end" class="font-mono" font-size="9" fill="#94A3B8" letter-spacing="1">EXPERIMENT</text>
+  </g>
+</svg>

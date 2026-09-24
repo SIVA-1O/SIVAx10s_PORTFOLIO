@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 56" width="100%" height="56">
+  <defs>
+    <linearGradient id="pillGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0E1713"/>
+      <stop offset="100%" stop-color="#080C0A"/>
+    </linearGradient>
+    <linearGradient id="pillGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0D141C"/>
+      <stop offset="100%" stop-color="#070A0F"/>
+    </linearGradient>
+    <linearGradient id="pillGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F121C"/>
+      <stop offset="100%" stop-color="#08090E"/>
+    </linearGradient>
+    <linearGradient id="pillGrad4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#140E1B"/>
+      <stop offset="100%" stop-color="#0A070E"/>
+    </linearGradient>
+    <linearGradient id="pillGrad5" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#17130B"/>
+      <stop offset="100%" stop-color="#0B0905"/>
+    </linearGradient>
+  </defs>
+
+  <style>
+    .font-mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+    .pulse-slow {
+      animation: pulseSlow 3s ease-in-out infinite;
+    }
+    .pulse-delay-1 { animation-delay: 0.6s; }
+    .pulse-delay-2 { animation-delay: 1.2s; }
+    .pulse-delay-3 { animation-delay: 1.8s; }
+    .pulse-delay-4 { animation-delay: 2.4s; }
+
+    @keyframes pulseSlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.85); }
+    }
+  </style>
+
+  <!-- Container Box -->
+  <rect width="900" height="56" rx="10" fill="#090A0D" stroke="#1A1D24" stroke-width="1"/>
+
+  <!-- Badge 1: 🟢 LIVE -->
+  <g transform="translate(18, 10)">
+    <rect width="162" height="36" rx="18" fill="url(#pillGrad1)" stroke="#134E35" stroke-width="1"/>
+    <g transform="translate(24, 18)" class="pulse-slow">
+      <circle cx="0" cy="0" r="4.5" fill="#10B981"/>
+      <circle cx="0" cy="0" r="8" fill="none" stroke="#10B981" stroke-width="1" opacity="0.3"/>
+    </g>
+    <text x="38" y="22" class="font-mono" font-size="11" font-weight="700" fill="#34D399" letter-spacing="1.5">LIVE</text>
+  </g>
+
+  <!-- Badge 2: ⚡ OPTIMIZED -->
+  <g transform="translate(192, 10)">
+    <rect width="162" height="36" rx="18" fill="url(#pillGrad2)" stroke="#1E3A8A" stroke-width="1"/>
+    <g transform="translate(22, 18)" class="pulse-slow pulse-delay-1">
+      <circle cx="0" cy="0" r="4.5" fill="#38BDF8"/>
+      <circle cx="0" cy="0" r="8" fill="none" stroke="#38BDF8" stroke-width="1" opacity="0.3"/>
+    </g>
+    <text x="36" y="22" class="font-mono" font-size="11" font-weight="700" fill="#7DD3FC" letter-spacing="1.5">⚡ OPTIMIZED</text>
+  </g>
+
+  <!-- Badge 3: 🌐 ONLINE -->
+  <g transform="translate(366, 10)">
+    <rect width="162" height="36" rx="18" fill="url(#pillGrad3)" stroke="#1D4ED8" stroke-width="1"/>
+    <g transform="translate(22, 18)" class="pulse-slow pulse-delay-2">
+      <circle cx="0" cy="0" r="4.5" fill="#60A5FA"/>
+      <circle cx="0" cy="0" r="8" fill="none" stroke="#60A5FA" stroke-width="1" opacity="0.3"/>
+    </g>
+    <text x="36" y="22" class="font-mono" font-size="11" font-weight="700" fill="#93C5FD" letter-spacing="1.5">🌐 ONLINE</text>
+  </g>
+
+  <!-- Badge 4: 🧊 WORLDZ ACTIVE -->
+  <g transform="translate(540, 10)">
+    <rect width="176" height="36" rx="18" fill="url(#pillGrad4)" stroke="#581C87" stroke-width="1"/>
+    <g transform="translate(20, 18)" class="pulse-slow pulse-delay-3">
+      <circle cx="0" cy="0" r="4.5" fill="#A855F7"/>
+      <circle cx="0" cy="0" r="8" fill="none" stroke="#A855F7" stroke-width="1" opacity="0.3"/>
+    </g>
+    <text x="34" y="22" class="font-mono" font-size="10.5" font-weight="700" fill="#D8B4FE" letter-spacing="1.2">🧊 WORLDZ ACTIVE</text>
+  </g>
+
+  <!-- Badge 5: 🎨 CREATING -->
+  <g transform="translate(728, 10)">
+    <rect width="154" height="36" rx="18" fill="url(#pillGrad5)" stroke="#78350F" stroke-width="1"/>
+    <g transform="translate(22, 18)" class="pulse-slow pulse-delay-4">
+      <circle cx="0" cy="0" r="4.5" fill="#F59E0B"/>
+      <circle cx="0" cy="0" r="8" fill="none" stroke="#F59E0B" stroke-width="1" opacity="0.3"/>
+    </g>
+    <text x="36" y="22" class="font-mono" font-size="11" font-weight="700" fill="#FCD34D" letter-spacing="1.5">🎨 CREATING</text>
+  </g>
+</svg>

@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 48" width="100%" height="48">
+  <defs>
+    <linearGradient id="edgeFadeLeft" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0A0B0E" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#0A0B0E" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="edgeFadeRight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0A0B0E" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#0A0B0E" stop-opacity="1"/>
+    </linearGradient>
+    <clipPath id="clipBox">
+      <rect x="0" y="0" width="900" height="48" rx="8"/>
+    </clipPath>
+  </defs>
+
+  <style>
+    .font-mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+    .marquee-track {
+      animation: marqueeScroll 22s linear infinite;
+    }
+    @keyframes marqueeScroll {
+      0% {
+        transform: translateX(0);
+      }
+      100% {
+        transform: translateX(-1450px);
+      }
+    }
+  </style>
+
+  <!-- Container -->
+  <rect width="900" height="48" rx="8" fill="#0A0B0E" stroke="#1D212A" stroke-width="1"/>
+
+  <!-- Scrolling Marquee inside clip path -->
+  <g clip-path="url(#clipBox)">
+    <g class="marquee-track">
+      <!-- Set 1 -->
+      <text x="0" y="29" class="font-mono" font-size="12" font-weight="600" fill="#E2E8F0" letter-spacing="2">
+        🎨 BRANDING  <tspan fill="#00F2FE">✦</tspan>  🔤 TYPOGRAPHY  <tspan fill="#00F2FE">✦</tspan>  🖼️ IMAGE MAKING  <tspan fill="#00F2FE">✦</tspan>  🖥️ DIGITAL  <tspan fill="#00F2FE">✦</tspan>  📱 UI / UX  <tspan fill="#00F2FE">✦</tspan>  🎬 MOTION  <tspan fill="#00F2FE">✦</tspan>  🧊 3D  <tspan fill="#00F2FE">✦</tspan>  🌐 INTERACTIVE  <tspan fill="#00F2FE">✦</tspan>  🧪 EXPERIMENTAL  <tspan fill="#00F2FE">✦</tspan>  
+      </text>
+      <!-- Set 2 (seamless continuation) -->
+      <text x="1450" y="29" class="font-mono" font-size="12" font-weight="600" fill="#E2E8F0" letter-spacing="2">
+        🎨 BRANDING  <tspan fill="#00F2FE">✦</tspan>  🔤 TYPOGRAPHY  <tspan fill="#00F2FE">✦</tspan>  🖼️ IMAGE MAKING  <tspan fill="#00F2FE">✦</tspan>  🖥️ DIGITAL  <tspan fill="#00F2FE">✦</tspan>  📱 UI / UX  <tspan fill="#00F2FE">✦</tspan>  🎬 MOTION  <tspan fill="#00F2FE">✦</tspan>  🧊 3D  <tspan fill="#00F2FE">✦</tspan>  🌐 INTERACTIVE  <tspan fill="#00F2FE">✦</tspan>  🧪 EXPERIMENTAL  <tspan fill="#00F2FE">✦</tspan>  
+      </text>
+      <!-- Set 3 -->
+      <text x="2900" y="29" class="font-mono" font-size="12" font-weight="600" fill="#E2E8F0" letter-spacing="2">
+        🎨 BRANDING  <tspan fill="#00F2FE">✦</tspan>  🔤 TYPOGRAPHY  <tspan fill="#00F2FE">✦</tspan>  🖼️ IMAGE MAKING  <tspan fill="#00F2FE">✦</tspan>  🖥️ DIGITAL  <tspan fill="#00F2FE">✦</tspan>  📱 UI / UX  <tspan fill="#00F2FE">✦</tspan>  🎬 MOTION  <tspan fill="#00F2FE">✦</tspan>  🧊 3D  <tspan fill="#00F2FE">✦</tspan>  🌐 INTERACTIVE  <tspan fill="#00F2FE">✦</tspan>  🧪 EXPERIMENTAL  <tspan fill="#00F2FE">✦</tspan>  
+      </text>
+    </g>
+  </g>
+
+  <!-- Left / Right Edge Vignette Fades -->
+  <rect x="0" y="0" width="80" height="48" fill="url(#edgeFadeLeft)"/>
+  <rect x="820" y="0" width="80" height="48" fill="url(#edgeFadeRight)"/>
+</svg>
