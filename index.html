@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIVA SURIYA — Multidisciplinary Visual Designer</title>
+  <meta name="description"
+    content="Portfolio of Siva Suriya, Multidisciplinary Graphic Designer & Visual Designer based in Chennai, India. Specializing in brand identity, typography, editorial systems, UI/UX, motion, 3D, and experimental media." />
+  <meta name="author" content="Siva Suriya" />
+  <meta name="robots" content="index, follow" />
+
+  <!-- Open Graph / Meta -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="SIVA SURIYA — Multidisciplinary Visual Designer" />
+  <meta property="og:description"
+    content="Contemporary graphic design archive, visual identities, digital systems, and editorial design by Sivasuriya." />
+  <meta property="og:image" content="assets/projects/branding/zesis/ZESIS (1).jpeg" />
+
+  <!-- Favicon / Web Icon System -->
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon/favicon-16x16.png" />
+  <link rel="shortcut icon" href="assets/favicon/favicon.ico" />
+  <link rel="manifest" href="assets/favicon/site.webmanifest" />
+  <meta name="theme-color" content="#080808" />
+
+  <!-- Google Fonts Preconnect & Optimized Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" />
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/main.css?v=2.3" />
+  <link rel="stylesheet" href="css/components.css?v=2.3" />
+  <link rel="stylesheet" href="css/responsive.css?v=2.3" />
+
+  <!-- Three.js ES Module Import Map -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./js/vendor/three.module.js",
+      "three/addons/controls/OrbitControls.js": "./js/vendor/OrbitControls.js",
+      "three/addons/loaders/GLTFLoader.js": "./js/vendor/GLTFLoader.js"
+    }
+  }
+  </script>
+</head>
+
+<body>
+
+  <!-- Motion Background Canvas (300 PNG Frames Player) -->
+  <canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+  <!-- Global Black Foreground Layer (Exact Match to Uploaded Reference) -->
+  <div class="bg-blend-layer" aria-hidden="true"></div>
+
+  <!-- Main Viewport Container -->
+  <div class="app-viewport">
+
+    <!-- Global Fixed Editorial Header (Section 1-5) -->
+    <header class="site-header" id="header" role="banner">
+      <div class="site-container">
+        <div class="header-inner">
+          <a href="#hero" class="brand-identity" aria-label="Sivasuriya Home">
+            <div class="brand-logo-group">
+              <span class="brand-logo">SIVASURIYA</span>
+            </div>
+            <span class="brand-descriptor">MULTIDISCIPLINARY DESIGNER</span>
+          </a>
+
+          <!-- Desktop Navigation (Primary Sections) -->
+          <nav class="nav-desktop" aria-label="Primary Navigation">
+            <a href="#hero" class="nav-link" data-section="hero"><span class="nav-num"></span><span
+                class="nav-text">ABOUT</span></a>
+            <a href="#work" class="nav-link" data-section="work"><span class="nav-num"></span><span
+                class="nav-text">WORKS</span></a>
+            <a href="#disciplines" class="nav-link" data-section="disciplines"><span class="nav-num"></span><span
+                class="nav-text">DISCIPLINES</span></a>
+            <a href="#3d-model" class="nav-link" data-section="3d-model"><span class="nav-num"></span><span
+                class="nav-text">3D MODEL</span></a>
+            <a href="#archive" class="nav-link" data-section="archive"><span class="nav-num"></span><span
+                class="nav-text">ARCHIVE</span></a>
+            <a href="#experience" class="nav-link" data-section="experience"><span class="nav-num"></span><span
+                class="nav-text">EXPERIENCE</span></a>
+            <a href="#services" class="nav-link" data-section="services"><span class="nav-num"></span><span
+                class="nav-text">SERVICES</span></a>
+            <a href="#tools" class="nav-link" data-section="tools"><span class="nav-num"></span><span
+                class="nav-text">TOOLS</span></a>
+            <a href="#contact" class="nav-link" data-section="contact"><span class="nav-num"></span><span
+                class="nav-text">CONTACT</span></a>
+          </nav>
+
+          <!-- Header Actions (Sound, Theme Toggle, Mobile Menu) -->
+          <div class="header-actions">
+            <button type="button" class="sound-toggle-btn" id="sound-toggle" aria-label="Turn sound on"
+              aria-pressed="false" title="Sound: OFF (Click to play)">
+              <span class="sound-icon-wrap" aria-hidden="true">
+                <svg class="sound-icon-playing" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                </svg>
+                <svg class="sound-icon-muted" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <line x1="23" y1="9" x2="17" y2="15"></line>
+                  <line x1="17" y1="9" x2="23" y2="15"></line>
+                </svg>
+              </span>
+              <span class="sound-toggle-label" id="sound-toggle-label"></span>
+            </button>
+            <a href="mailto:sivax10s@gmail.com" class="nav-connect-btn" id="nav-connect-btn"
+              aria-label="Contact Sivasuriya — Email sivax10s@gmail.com">CONNECT</a>
+            <button type="button" class="mobile-menu-trigger" id="mobile-menu-open" aria-label="Open Mobile Navigation">
+              <span></span>
+              <span></span>
+              <span></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Mobile Drawer Overlay (Section 5) -->
+    <div class="mobile-menu-drawer" id="mobile-drawer" role="dialog" aria-modal="true" aria-label="Mobile Navigation">
+      <div class="mobile-menu-header">
+        <div class="brand-identity">
+          <div class="brand-logo-group">
+            <span class="brand-logo">SIVASURIYA</span>
+          </div>
+          <span class="brand-descriptor">MULTIDISCIPLINARY GRAPHIC DESIGNER</span>
+        </div>
+        <button type="button" class="modal-close-btn" id="mobile-menu-close" aria-label="Close Mobile Navigation">
+          <span>CLOSE</span>
+        </button>
+      </div>
+
+      <nav class="mobile-menu-links">
+        <a href="#hero" class="mobile-menu-link"><span class="mobile-link-num"></span><span
+            class="mobile-link-sep">&bull;</span><span class="mobile-link-label">ABOUT</span></a>
+        <a href="#work" class="mobile-menu-link"><span class="mobile-link-num"></span><span
+            class="mobile-link-sep">&bull;</span><span class="mobile-link-label">WORK</span></a>
+        <a href="#disciplines" class="mobile-menu-link"><span class="mobile-link-num"></span><span
+            class="mobile-link-sep">&bull;</span><span class="mobile-link-label">DISCIPLINES</span></a>
+        <a href="#3d-model" class="mobile-menu-link"><span class="mobile-link-num"></span><span
+            class="mobile-link-sep">&bull;</span><span class="mobile-link-label">3D MODEL</span></a>
+        <a href="#archive" class="mobile-menu-link"><span class="mobile-link-num"></span><span
+            class="mobile-link-sep">&bull;</span><span class="mobile-link-label">ARCHIVE</span></a>
+        <a href="#experience" class="mobile-menu-link"><span class="mobile-link-num"></span><span
+            class="mobile-link-sep">&bull;</span><span class="mobile-link-label">EXPERIENCE</span></a>
+        <a href="#services" class="mobile-menu-link"><span class="mobile-link-num"></span><span
+            class="mobile-link-sep">&bull;</span><span class="mobile-link-label">SERVICES</span></a>
+        <a href="#tools" class="mobile-menu-link"><span class="mobile-link-num"></span><span
+            class="mobile-link-sep">&bull;</span><span class="mobile-link-label">TOOLS</span></a>
+        <a href="#contact" class="mobile-menu-link"><span class="mobile-link-num"></span><span
+            class="mobile-link-sep">&bull;</span><span class="mobile-link-label">CONTACT</span></a>
+      </nav>
+
+      <div class="mobile-social-section">
+        <span class="mobile-social-label">SOCIAL / LINKS</span>
+        <div class="mobile-social-cluster">
+          <a href="https://www.linkedin.com/in/sivax10s" class="mobile-social-item" data-social="linkedin"
+            target="_blank" rel="noopener noreferrer">
+            <span>LINKEDIN &rarr;</span>
+          </a>
+          <a href="https://www.behance.net/sivax10s" class="mobile-social-item" data-social="behance" target="_blank"
+            rel="noopener noreferrer">
+            <span>BEHANCE &rarr;</span>
+          </a>
+          <a href="https://www.instagram.com" class="mobile-social-item" data-social="instagram" target="_blank"
+            rel="noopener noreferrer">
+            <span>INSTAGRAM &rarr;</span>
+          </a>
+          <a href="https://dribbble.com" class="mobile-social-item" data-social="dribbble" target="_blank"
+            rel="noopener noreferrer">
+            <span>DRIBBBLE &rarr;</span>
+          </a>
+          <a href="https://x.com/SIVAx10s" class="mobile-social-item" data-social="twitter" target="_blank"
+            rel="noopener noreferrer">
+            <span>TWITTER / X &rarr;</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="mobile-menu-footer">
+        <p style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted); text-align: center;">
+          CHENNAI, INDIA &bull; sivax10s@gmail.com</p>
+      </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main id="main-content">
+
+      <!-- 01 — HERO SECTION -->
+      <section class="hero-section" id="hero">
+        <div class="site-container">
+          <div class="hero-meta-bar">
+            <div class="hero-status-badge">
+              <span class="status-pulse-dot"></span>
+              <span id="hero-status">AVAILABLE FOR SELECT COMMISSIONS</span>
+            </div>
+            <div class="hero-location-group">
+              <div class="hero-location-text">
+                <span>CHENNAI, INDIA &bull; <span id="ist-clock">--:--:-- IST</span></span>
+              </div>
+              <a href="assets/resume/SIVASURIYA_RESUME.pdf" download="SIVASURIYA_RESUME.pdf"
+                class="hero-resume-download-btn" id="hero-resume-btn" aria-label="Download Sivasuriya Resume PDF"
+                title="Download Sivasuriya Resume">
+                <svg class="resume-dl-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+
+                  <g class="download-motion">
+                    <path d="M12 3v12"></path>
+                    <path d="M7 10l5 5 5-5"></path>
+                  </g>
+
+                  <path d="M5 21h14"></path>
+                </svg>
+
+                <style>
+                  .resume-dl-icon .download-motion {
+                    animation: resumeDownloadMotion 1.15s cubic-bezier(.4, 0, .2, 1) infinite;
+                    transform-box: fill-box;
+                    transform-origin: center;
+                  }
+
+                  @keyframes resumeDownloadMotion {
+                    0% {
+                      transform: translateY(-5px);
+                      opacity: 0;
+                    }
+
+                    20% {
+                      transform: translateY(-2px);
+                      opacity: 1;
+                    }
+
+                    65% {
+                      transform: translateY(4px);
+                      opacity: 1;
+                    }
+
+                    100% {
+                      transform: translateY(8px);
+                      opacity: 0;
+                    }
+                  }
+                </style>
+                <span>DOWNLOAD RESUME</span>
+              </a>
+            </div>
+          </div>
+
+          <div class="hero-title-group">
+            <h1 class="hero-main-name" id="hero-name">SIVASURIYA</h1>
+            <div class="hero-sub-row">
+              <p class="hero-sub-title" id="hero-role">Multidisciplinary Graphic Designer</p>
+
+              <div class="hero-connect-wrapper">
+                <a href="mailto:sivax10s@gmail.com" class="hero-connect-btn" id="hero-connect-btn"
+                  aria-label="Contact Sivasuriya — Send email to sivax10s@gmail.com" title="Contact Sivasuriya">
+                  <canvas class="hero-connect-canvas" id="hero-connect-canvas" aria-hidden="true"></canvas>
+                  <span class="hero-connect-overlay" aria-hidden="true"></span>
+                  <span class="hero-connect-content">
+                    <span class="hero-connect-viewport" id="hero-connect-viewport">
+                      <span class="hero-connect-phrase hero-connect-phrase--current">CONNECT</span>
+                    </span>
+                    <span class="hero-connect-arrow" aria-hidden="true">↗</span>
+                  </span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-footer-grid">
+            <div class="hero-marquee-wrap" id="hero-disciplines" aria-label="Disciplines Marquee">
+              <div class="hero-marquee-track">
+                <div class="hero-marquee-content">
+                  <span>Branding</span><span class="marquee-sep">/</span>
+                  <span>Graphic Design</span><span class="marquee-sep">/</span>
+                  <span>Digital</span><span class="marquee-sep">/</span>
+                  <span>UI/UX</span><span class="marquee-sep">/</span>
+                  <span>Motion</span><span class="marquee-sep">/</span>
+                  <span>3D</span><span class="marquee-sep">/</span>
+                  <span>Image Making</span><span class="marquee-sep">/</span>
+                  <span>Art Direction</span><span class="marquee-sep">/</span>
+                </div>
+                <div class="hero-marquee-content" aria-hidden="true">
+                  <span>Branding</span><span class="marquee-sep">/</span>
+                  <span>Graphic Design</span><span class="marquee-sep">/</span>
+                  <span>Digital</span><span class="marquee-sep">/</span>
+                  <span>UI/UX</span><span class="marquee-sep">/</span>
+                  <span>Motion</span><span class="marquee-sep">/</span>
+                  <span>3D</span><span class="marquee-sep">/</span>
+                  <span>Image Making</span><span class="marquee-sep">/</span>
+                  <span>Art Direction</span><span class="marquee-sep">/</span>
+                </div>
+              </div>
+            </div>
+            <div class="hero-cta-cluster">
+              <a href="#work" class="hero-scroll-prompt">
+                <span>EXPLORE WORK</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="square">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <polyline points="19 12 12 19 5 12"></polyline>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 02 — INTRODUCTION -->
+      <section class="intro-section" id="intro">
+        <div class="site-container">
+          <div class="intro-content-wrapper">
+            <p class="intro-lead-text" id="intro-text">
+              I create visual identities, campaigns, digital experiences and experimental visual systems across graphic
+              design, branding, UI/UX, motion, 3D and image making.
+            </p>
+
+
+            <div class="freelance-showcase" id="freelance-intro-showcase">
+              <img src="assets/freelance/FREELANCE_IMAGE2.png"
+                alt="Sivasuriya — Freelance Visual Design Experience & Studio Artifacts" loading="lazy" decoding="async"
+                width="1536" height="1024" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 03 — SELECTED WORK (SECTION 01 — WORK) -->
+      <section class="selected-work-section" id="work">
+        <div class="site-container">
+          <div class="section-header-editorial">
+            <div class="section-kicker-row">
+              <span class="section-number">SECTION 01</span>
+              <span class="section-category-tag">CURATED EXHIBITION</span>
+            </div>
+            <h2 class="section-title-editorial">SELECTED WORK</h2>
+            <p class="section-subtitle-editorial">Art-directed design systems, visual identities, and screen artifacts
+              curated for structural tension, hierarchy, and conceptual clarity.</p>
+          </div>
+
+          <div class="selected-work-grid" id="selected-work-grid">
+            <!-- Dynamic Editorial Rows populated by app.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- 04 — TEN CORE DISCIPLINES -->
+      <section class="disciplines-section" id="disciplines">
+        <div class="site-container">
+          <div class="section-header-editorial">
+            <div class="section-kicker-row">
+              <span class="section-number">SECTION 02</span>
+              <span class="section-category-tag">DISCIPLINE MATRIX</span>
+            </div>
+            <h2 class="section-title-editorial">TEN DISCIPLINES</h2>
+            <p class="section-subtitle-editorial">A unified body of visual work spanning ten specialized domains. Every
+              project is cross-disciplinary by nature.</p>
+          </div>
+
+          <!-- Infinite Horizontal Disciplines Marquee -->
+          <div class="discipline-marquee-wrap" aria-hidden="true">
+            <div class="discipline-marquee-track">
+              <div class="discipline-marquee-content">
+                <span>BRANDING</span><span class="marquee-sep">/</span>
+                <span>GRAPHIC DESIGN</span><span class="marquee-sep">/</span>
+                <span>DIGITAL</span><span class="marquee-sep">/</span>
+                <span>UI/UX</span><span class="marquee-sep">/</span>
+                <span>MOTION</span><span class="marquee-sep">/</span>
+                <span>3D</span><span class="marquee-sep">/</span>
+                <span>IMAGE MAKING</span><span class="marquee-sep">/</span>
+                <span>ART DIRECTION</span><span class="marquee-sep">/</span>
+              </div>
+              <div class="discipline-marquee-content" aria-hidden="true">
+                <span>BRANDING</span><span class="marquee-sep">/</span>
+                <span>GRAPHIC DESIGN</span><span class="marquee-sep">/</span>
+                <span>DIGITAL</span><span class="marquee-sep">/</span>
+                <span>UI/UX</span><span class="marquee-sep">/</span>
+                <span>MOTION</span><span class="marquee-sep">/</span>
+                <span>3D</span><span class="marquee-sep">/</span>
+                <span>IMAGE MAKING</span><span class="marquee-sep">/</span>
+                <span>ART DIRECTION</span><span class="marquee-sep">/</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="disciplines-grid" id="disciplines-grid">
+            <!-- Disciplines Grid populated by app.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- 05 — 3D INTERACTIVE WORLD / GLOBAL CREATIVE NETWORK (SECTION 03 — 3D MODEL) -->
+      <section class="three-section world-section" id="3d-model"
+        aria-label="Interactive 3D Earth and Global Creative Network">
+        <div class="site-container">
+          <div class="section-header-editorial">
+            <div class="section-kicker-row">
+              <span class="section-number">SECTION 03</span>
+              <span class="section-category-tag">DIMENSIONAL / WEBGL</span>
+              <div class="world-live-badge" id="world-live-indicator" title="Live Day / Night Lighting Synced to UTC">
+                <span class="world-live-pulse" aria-hidden="true"></span>
+                <span class="world-live-label">LIVE DAY / NIGHT</span>
+              </div>
+            </div>
+            <h2 class="section-title-editorial">WORLD &bull; GLOBAL NETWORK</h2>
+            <p class="section-subtitle-editorial">Explore creative work and global studio connections through an
+              interactive 3D Earth. Featuring real-time solar terminator illumination, location nodes, and discipline
+              filtering.</p>
+          </div>
+
+          <!-- Minimalist Creative Discipline Filter Bar -->
+          <div class="world-discipline-filter-bar" id="world-discipline-filters" role="group"
+            aria-label="Filter locations by discipline">
+            <button type="button" class="world-filter-btn is-active" data-discipline="ALL">ALL</button>
+            <button type="button" class="world-filter-btn" data-discipline="BRANDING">BRANDING</button>
+            <button type="button" class="world-filter-btn" data-discipline="GRAPHIC DESIGN">GRAPHIC DESIGN</button>
+            <button type="button" class="world-filter-btn" data-discipline="UI / UX">UI / UX</button>
+            <button type="button" class="world-filter-btn" data-discipline="3D">3D</button>
+            <button type="button" class="world-filter-btn" data-discipline="MOTION">MOTION</button>
+            <button type="button" class="world-filter-btn" data-discipline="DIGITAL">DIGITAL</button>
+          </div>
+
+          <!-- Interactive 3D World Layout -->
+          <div class="world-main-layout">
+            <!-- 20-Country Quick Navigation Directory -->
+            <div class="world-directory-wrap">
+              <div class="world-directory-header">
+                <span class="world-dir-label">GLOBAL NETWORK</span>
+                <span class="world-dir-count">20 LOCATIONS</span>
+              </div>
+              <div class="world-country-directory" id="world-country-directory" role="navigation"
+                aria-label="Global Locations Directory">
+                <!-- Populated dynamically by three-viewer.js: 01 INDIA, 02 UNITED STATES, ... 20 SOUTH AFRICA -->
+              </div>
+            </div>
+
+            <!-- 3D Earth WebGL Viewer Container -->
+            <div class="three-viewer-wrapper" id="three-wrapper">
+              <div id="three-viewport"></div>
+
+              <!-- Interaction Hint Overlay (fades out on interaction) -->
+              <div class="world-interaction-hint" id="world-interaction-hint">
+                <span class="world-hint-icon" aria-hidden="true">&bull;</span>
+                <span>DRAG TO ROTATE &bull; SCROLL TO ZOOM &bull; CLICK ANY LOCATION</span>
+              </div>
+
+              <!-- Great-Circle Distance Indicator Badge -->
+              <div class="world-distance-badge" id="world-distance-badge" aria-hidden="true">
+                <div class="world-dist-icon" aria-hidden="true">&#x2194;</div>
+                <div class="world-dist-text-wrap">
+                  <span class="world-dist-route" id="world-dist-route">INDIA &rarr; JAPAN</span>
+                  <span class="world-dist-value" id="world-dist-value">5,800 KM</span>
+                </div>
+              </div>
+
+              <!-- Rich Location Information Panel -->
+              <aside class="world-location-panel" id="world-location-panel" role="region"
+                aria-label="Creative Location Intelligence" hidden>
+                <div class="world-panel-header">
+                  <div class="world-panel-title-group">
+                    <span class="world-panel-kicker" id="world-panel-kicker">GLOBAL CREATIVE NODE</span>
+                    <h3 class="world-panel-city" id="world-panel-city">TOKYO</h3>
+                    <span class="world-panel-country" id="world-panel-country">JAPAN</span>
+                  </div>
+                  <button type="button" class="world-panel-close-btn" id="world-panel-close"
+                    aria-label="Close Location Intelligence">&times;</button>
+                </div>
+
+                <!-- Coordinates, Local Time, and Solar Status -->
+                <div class="world-panel-stats-row">
+                  <div class="world-panel-stat">
+                    <span class="world-stat-label">COORDINATES</span>
+                    <span class="world-stat-val" id="world-panel-coords">35.68° N &bull; 139.65° E</span>
+                  </div>
+                  <div class="world-panel-stat">
+                    <span class="world-stat-label">LOCAL TIME</span>
+                    <span class="world-stat-val" id="world-panel-time">02:41 JST</span>
+                  </div>
+                  <div class="world-panel-stat">
+                    <span class="world-stat-label">SOLAR STATUS</span>
+                    <span class="world-stat-badge is-night" id="world-panel-solar">&#x1F319; NIGHT</span>
+                  </div>
+                </div>
+
+                <div class="world-panel-role" id="world-panel-role">Kinetic Motion & Dimensional Center</div>
+
+                <div class="world-panel-disciplines-wrap">
+                  <div class="world-panel-sub-label">CREATIVE FOCUS</div>
+                  <div class="world-panel-disciplines-list" id="world-panel-tags">
+                    <!-- Populated dynamically -->
+                  </div>
+                </div>
+
+                <!-- Connected Network Hubs -->
+                <div class="world-panel-connections-wrap">
+                  <div class="world-panel-sub-label">CONNECTED NETWORK (<span id="world-panel-conn-count">04</span>)
+                  </div>
+                  <div class="world-panel-connections-list" id="world-panel-connections">
+                    <!-- Populated dynamically -->
+                  </div>
+                </div>
+
+                <!-- Representative Portfolio Projects -->
+                <div class="world-panel-projects-wrap" id="world-panel-projects-wrap">
+                  <div class="world-panel-sub-label">CREATIVE WORK</div>
+                  <div class="world-panel-projects-list" id="world-panel-projects">
+                    <!-- Populated dynamically -->
+                  </div>
+                </div>
+              </aside>
+            </div>
+          </div>
+
+          <!-- Live World Clock Strip -->
+          <div class="world-live-clock-strip" id="world-live-clock-strip" aria-label="Live Global Studio Clocks">
+            <!-- Populated dynamically by three-viewer.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- 06 — ALL WORK ARCHIVE & HORIZONTAL MARQUEE (SECTION 04 — ARCHIVE) -->
+      <section class="all-work-section" id="archive">
+        <div class="site-container">
+          <div class="section-header-editorial">
+            <div class="section-kicker-row">
+              <span class="section-number">SECTION 04</span>
+              <span class="section-category-tag">COMPLETE ARCHIVE</span>
+            </div>
+            <h2 class="section-title-editorial">ALL WORK ARCHIVE</h2>
+            <p class="section-subtitle-editorial">Interactive horizontal archive of all creative projects. Every project
+              is clickable to inspect its full case study dossier.</p>
+          </div>
+
+          <!-- Horizontal Project Marquee Container (Section 12-16) -->
+          <div class="archive-marquee-container" id="archive-marquee-container"
+            aria-label="Interactive Horizontal Project Archive Marquee">
+            <!-- Populated dynamically by app.js with duplicated tracks for seamless infinite loop -->
+          </div>
+
+          <!-- Specimen Filter and Catalog Section -->
+          <div class="archive-view-toggle-bar">
+            <span class="archive-section-tagline">CATALOG FILTER &bull; BY DISCIPLINE</span>
+          </div>
+
+          <div class="filter-bar-container" id="filter-bar">
+            <!-- Filter Pills populated by app.js -->
+          </div>
+
+          <div class="archive-project-grid" id="archive-grid">
+            <!-- Filtered Cards populated by app.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- 05 — EXPERIENCE SECTION (INTERACTIVE PROFESSIONAL TIMELINE) -->
+      <section class="experience-section about-section" id="experience" aria-label="Professional Experience Timeline">
+        <div class="site-container">
+          <div class="section-header-editorial">
+            <div class="section-kicker-row">
+              <span class="section-number">SECTION 05</span>
+              <span class="section-category-tag">PROFESSIONAL EXPERIENCE</span>
+              <span class="section-counter-badge" id="exp-counter" aria-live="polite">01 / 04</span>
+            </div>
+            <h2 class="section-title-editorial">EXPERIENCE</h2>
+            <p class="section-subtitle-editorial">A chronological timeline of independent design practice, interface
+              systems, dimensional form, and video post-production.</p>
+          </div>
+
+          <!-- Interactive Timeline Architecture -->
+          <div class="experience-timeline-layout">
+            <!-- Left: Subtle Vertical Timeline & Interactive List -->
+            <div class="experience-timeline-col">
+              <div class="timeline-track-rail" aria-hidden="true">
+                <div class="timeline-progress-bar" id="exp-progress-line"></div>
+              </div>
+
+              <div class="experience-entries-list" id="experience-entries-list" role="tablist"
+                aria-label="Experience Chronology">
+                <!-- Dynamically populated by app.js with the 4 strict entries -->
+              </div>
+            </div>
+
+            <!-- Right: Contextual Sticky Visual Preview Frame -->
+            <div class="experience-preview-col" aria-hidden="true">
+              <div class="experience-sticky-preview">
+                <div class="experience-preview-frame" id="exp-preview-frame">
+                  <img id="exp-preview-img" src="assets/freelance/FREELANCE_HERO_PORTRAIT.jpg"
+                    alt="Experience Visual Preview" loading="lazy" decoding="async" width="896" height="1200" />
+                  <div class="experience-preview-badge" id="exp-preview-badge">01 // 2024</div>
+                </div>
+                <div class="experience-preview-meta">
+                  <span class="preview-meta-caption" id="exp-preview-caption">INDEPENDENT PRACTICE · FREELANCE GRAPHIC
+                    DESIGN</span>
+                  <span class="preview-meta-tag" id="exp-preview-tag">CHRONOLOGY</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 06 — SERVICES (INTERACTIVE CREATIVE SERVICE INDEX) -->
+      <section class="services-section" id="services" aria-label="Interactive Creative Service Index">
+        <div class="site-container">
+          <div class="section-header-editorial">
+            <div class="section-kicker-row">
+              <span class="section-number">SECTION 06</span>
+              <span class="section-category-tag">CREATIVE SERVICES</span>
+              <span class="section-counter-badge" id="services-counter" aria-live="polite">01 / 10</span>
+            </div>
+            <h2 class="section-title-editorial">SERVICES</h2>
+            <p class="section-subtitle-editorial">Explore capabilities, inspect deliverables, review software
+              instrumentation, and examine related work.</p>
+          </div>
+
+          <!-- Interactive Service Index Grid -->
+          <div class="service-index-layout">
+            <!-- Left: Large Editorial Service Index List (01 - 10) -->
+            <div class="service-index-col">
+              <div class="service-index-list" id="services-index-list" role="tablist" aria-label="Services List">
+                <!-- Dynamically populated by app.js -->
+              </div>
+            </div>
+
+            <!-- Right: Dynamic Floating Project Preview & Service Intelligence -->
+            <div class="service-detail-col">
+              <div class="service-detail-sticky-panel" id="service-detail-panel">
+                <!-- Dynamic Floating Project Thumbnail Showcase -->
+                <div class="service-thumbnail-showcase" id="service-thumbnail-showcase">
+                  <div class="service-thumbnail-viewport" id="service-thumbnail-viewport" role="button" tabindex="0"
+                    aria-label="Open project case study">
+                    <!-- Layer 0 for smooth crossfade & scale transitions -->
+                    <div class="service-thumb-layer is-active" id="service-thumb-layer-0">
+                      <img id="service-thumb-img-0" src="assets/projects/branding/zesis/ZESIS (1).jpeg"
+                        alt="ZESIS Project Showcase" loading="lazy" decoding="async" width="1200" height="900" />
+                    </div>
+                    <!-- Layer 1 for incoming thumbnail -->
+                    <div class="service-thumb-layer" id="service-thumb-layer-1">
+                      <img id="service-thumb-img-1" src="" alt="Project Showcase" />
+                    </div>
+
+                    <!-- Floating Project Counter Pill (e.g. 01 / 01 or 01 / 03) -->
+                    <div class="service-thumb-counter-pill" id="service-project-index-badge">
+                      <span id="service-thumb-cur-idx">01</span> / <span id="service-thumb-total-count">01</span>
+                    </div>
+
+                    <!-- Hover Interactive Action Pill -->
+                    <div class="service-thumb-hover-action" aria-hidden="true">
+                      <span class="service-thumb-action-label">VIEW PROJECT</span>
+                      <span class="service-thumb-action-arrow">&rarr;</span>
+                    </div>
+
+                    <!-- Multi-project Selector Pills (e.g. KIJGO · MUS26 · STDEED) -->
+                    <div class="service-thumb-nav-pills" id="service-thumb-nav-pills" aria-label="Switch project"></div>
+                  </div>
+
+                  <!-- Primary Project Name & Category Caption -->
+                  <div class="service-showcase-caption">
+                    <div class="service-caption-headline">
+                      <h4 class="service-showcase-project-title" id="service-showcase-project-title">ZESIS</h4>
+                      <span class="service-showcase-category" id="service-showcase-category">BRANDING</span>
+                    </div>
+                    <div class="service-caption-actions">
+                      <span class="service-showcase-explore-link">OPEN CASE STUDY &rarr;</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Dynamic Metadata Card -->
+                <div class="service-detail-body">
+                  <div class="service-detail-header">
+                    <span class="service-detail-kicker" id="service-kicker">IDENTITY / SYSTEM / CULTURE</span>
+                    <h3 class="service-detail-title" id="service-title">BRANDING</h3>
+                  </div>
+
+                  <p class="service-detail-desc" id="service-desc">
+                    Building distinctive identities and visual systems for brands, products, and creative projects.
+                  </p>
+
+                  <div class="service-intel-grid">
+                    <!-- Deliverables Block -->
+                    <div class="service-intel-block">
+                      <h4 class="service-intel-heading">DELIVERABLES</h4>
+                      <ul class="service-deliverables-list" id="service-deliverables">
+                        <!-- Populated dynamically -->
+                      </ul>
+                    </div>
+
+                    <!-- Tools & Related Work Block -->
+                    <div class="service-intel-block">
+                      <div class="service-tools-wrap">
+                        <h4 class="service-intel-heading">TOOLS</h4>
+                        <div class="service-tools-cluster" id="service-tools">
+                          <!-- Populated dynamically -->
+                        </div>
+                      </div>
+
+                      <div class="service-related-wrap">
+                        <h4 class="service-intel-heading">RELATED WORK</h4>
+                        <div class="service-related-links" id="service-related">
+                          <!-- Populated dynamically with project modal triggers -->
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Call to Action: HAVE A PROJECT IN MIND? LET'S TALK → -->
+          <div class="services-cta-banner">
+            <div class="services-cta-inner">
+              <div class="services-cta-text">
+                <span class="services-cta-kicker">COLLABORATION & COMMISSIONS</span>
+                <h3 class="services-cta-title">HAVE A PROJECT IN MIND?</h3>
+              </div>
+              <a href="#contact" class="services-cta-btn" id="services-contact-trigger">
+                <span>LET'S TALK</span>
+                <span class="btn-arrow" aria-hidden="true">&rarr;</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 09 — TOOLS ARCHIVE -->
+      <section class="tools-section" id="tools">
+        <div class="site-container">
+          <div class="section-header-editorial">
+            <div class="section-kicker-row">
+              <span class="section-number">SECTION 07</span>
+              <span class="section-category-tag">TOOLS & SOFTWARE</span>
+            </div>
+            <h2 class="section-title-editorial">CREATIVE PRACTICE</h2>
+            <p class="section-subtitle-editorial">Specialized creative software, development environments, and
+              generative frameworks utilized across projects.</p>
+          </div>
+
+          <div id="tools-container">
+            <!-- Populated by app.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- 08 — CONTACT SECTION (SECTION 08 — CONTACT) -->
+      <section class="contact-section" id="contact">
+        <div class="site-container">
+          <div class="section-header-editorial">
+            <div class="section-kicker-row">
+              <span class="section-number">SECTION 08</span>
+              <span class="section-category-tag">CONTACT </span>
+            </div>
+            <h2 class="contact-hero-cta">LET'S MAKE<br />SOMETHING<br />VISUAL</h2>
+            <p class="contact-sub-statement">
+              Multidisciplinary Graphic Designer / Visual Designer based in Chennai, India.
+              Available for selected commissions, collaborations, brand identities and digital systems worldwide.
+            </p>
+
+            <div class="contact-cta-wrapper" id="contact-cta-wrapper">
+              <a href="mailto:sivaX10s@gmail.com" class="contact-magnetic-btn" id="contact-magnetic-btn"
+                aria-label="Get in touch via email">
+                <span class="btn-text">GET IN TOUCH</span>
+                <span class="btn-arrow" aria-hidden="true">&rarr;</span>
+              </a>
+
+              <!-- COMPACT HORIZONTAL CONTACT & SOCIAL MARQUEE (CO-LINEAR WITH CTA) -->
+              <div class="contact-marquee-wrapper" id="contact-marquee"
+                aria-label="Direct Contact & Social Network Marquee">
+                <div class="contact-marquee-track">
+                  <!-- Set 1 -->
+                  <a href="tel:+919042448432" class="contact-marquee-item" title="Call 9042448432">
+                    <svg class="contact-marquee-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                      aria-hidden="true">
+                      <path
+                        d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                    <span>9042448432</span>
+                  </a>
+                  <span class="contact-marquee-sep" aria-hidden="true">&bull;</span>
+                  <a href="mailto:sivaX10s@gmail.com" class="contact-marquee-item"
+                    title="Email sivasuriya.design@gmail.com">
+                    <svg class="contact-marquee-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                      aria-hidden="true">
+                      <rect x="2" y="4" width="20" height="16" rx="2" />
+                      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                    </svg>
+                    <span>EMAIL</span>
+                  </a>
+                  <span class="contact-marquee-sep" aria-hidden="true">&bull;</span>
+                  <a href="https://www.linkedin.com/in/sivax10s" target="_blank" rel="noopener noreferrer"
+                    class="contact-marquee-item" title="LinkedIn Profile">
+                    <svg class="contact-marquee-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"
+                      aria-hidden="true">
+                      <path
+                        d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
+                    </svg>
+                    <span>LINKEDIN</span>
+                  </a>
+                  <span class="contact-marquee-sep" aria-hidden="true">&bull;</span>
+                  <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer"
+                    class="contact-marquee-item" title="Instagram Profile">
+                    <svg class="contact-marquee-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                      aria-hidden="true">
+                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                    </svg>
+                    <span>INSTAGRAM</span>
+                  </a>
+                  <span class="contact-marquee-sep" aria-hidden="true">&bull;</span>
+                  <a href="https://x.com/sivax10s" target="_blank" rel="noopener noreferrer"
+                    class="contact-marquee-item" title="X Profile">
+                    <svg class="contact-marquee-icon" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"
+                      aria-hidden="true">
+                      <path
+                        d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                    </svg>
+                    <span>X</span>
+                  </a>
+                  <span class="contact-marquee-sep" aria-hidden="true">&bull;</span>
+                  <a href="https://www.behance.net/sivax10s" target="_blank" rel="noopener noreferrer"
+                    class="contact-marquee-item" title="Behance Portfolio">
+                    <svg class="contact-marquee-icon" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"
+                      aria-hidden="true">
+                      <path
+                        d="M22 7h-7V5h7v2zm1.726 10c-.442 1.297-2.029 3-4.971 3-3.467 0-5.755-2.5-5.755-6s2.288-6 5.755-6c3.466 0 5.245 2.5 5.245 5.5 0 .633-.075 1.055-.075 1.055H15.5c.105 1.406 1.157 2.146 2.378 2.146 1.11 0 1.954-.64 2.185-1.701h3.663zM15.5 12.5h4.167c-.085-1.196-.867-1.875-2.083-1.875-1.229 0-1.979.679-2.084 1.875zM8.667 12.5c1.472 0 2.833-.67 2.833-2.5 0-1.83-1.361-2.5-2.833-2.5H2v13h6.667c1.472 0 3.333-.67 3.333-3 0-2.33-1.861-3-3.333-3H5v-2h3.667zM5 9.5h3.667c.607 0 1.333.275 1.333 1s-.726 1-1.333 1H5V9.5zm0 8v-2.5h3.667c.607 0 1.833.275 1.833 1.25s-1.226 1.25-1.833 1.25H5z" />
+                    </svg>
+                    <span>BEHANCE</span>
+                  </a>
+                  <span class="contact-marquee-sep" aria-hidden="true">&bull;</span>
+                  <a href="https://github.com/SIVA-1O" target="_blank" rel="noopener noreferrer"
+                    class="contact-marquee-item" title="GitHub Profile">
+                    <svg class="contact-marquee-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"
+                      aria-hidden="true">
+                      <path fill-rule="evenodd" clip-rule="evenodd"
+                        d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+                    </svg>
+                    <span>GITHUB</span>
+                  </a>
+                  <span class="contact-marquee-sep" aria-hidden="true">&bull;</span>
+
+                  <!-- Set 2 (Exact duplicate for seamless continuous loop) -->
+                  <a href="tel:+919042448432" class="contact-marquee-item" title="Call 9042448432" aria-hidden="true"
+                    tabindex="-1">
+                    <svg class="contact-marquee-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                      aria-hidden="true">
+                      <path
+                        d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                    <span>9042448432</span>
+                  </a>
+                  <span class="contact-marquee-sep" aria-hidden="true">&bull;</span>
+                  <a href="mailto:sivax10s@gmail.com" class="contact-marquee-item" title="Email sivax10s@gmail.com"
+                    aria-hidden="true" tabindex="-1">
+                    <svg class="contact-marquee-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                      aria-hidden="true">
+                      <rect x="2" y="4" width="20" height="16" rx="2" />
+                      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                    </svg>
+                    <span>EMAIL</span>
+                  </a>
+                  <span class="contact-marquee-sep" aria-hidden="true">&bull;</span>
+                  <a href="https://www.linkedin.com/in/sivax10s" target="_blank" rel="noopener noreferrer"
+                    class="contact-marquee-item" title="LinkedIn Profile" aria-hidden="true" tabindex="-1">
+                    <svg class="contact-marquee-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"
+                      aria-hidden="true">
+                      <path
+                        d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
+                    </svg>
+                    <span>LINKEDIN</span>
+                  </a>
+                  <span class="contact-marquee-sep" aria-hidden="true">&bull;</span>
+                  <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer"
+                    class="contact-marquee-item" title="Instagram Profile" aria-hidden="true" tabindex="-1">
+                    <svg class="contact-marquee-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                      aria-hidden="true">
+                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                    </svg>
+                    <span>INSTAGRAM</span>
+                  </a>
+                  <span class="contact-marquee-sep" aria-hidden="true">&bull;</span>
+                  <a href="https://x.com/SIVAx10s" target="_blank" rel="noopener noreferrer"
+                    class="contact-marquee-item" title="X Profile" aria-hidden="true" tabindex="-1">
+                    <svg class="contact-marquee-icon" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"
+                      aria-hidden="true">
+                      <path
+                        d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                    </svg>
+                    <span>X</span>
+                  </a>
+                  <span class="contact-marquee-sep" aria-hidden="true">&bull;</span>
+                  <a href="https://www.behance.net/sivax10s" target="_blank" rel="noopener noreferrer"
+                    class="contact-marquee-item" title="Behance Portfolio" aria-hidden="true" tabindex="-1">
+                    <svg class="contact-marquee-icon" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"
+                      aria-hidden="true">
+                      <path
+                        d="M22 7h-7V5h7v2zm1.726 10c-.442 1.297-2.029 3-4.971 3-3.467 0-5.755-2.5-5.755-6s2.288-6 5.755-6c3.466 0 5.245 2.5 5.245 5.5 0 .633-.075 1.055-.075 1.055H15.5c.105 1.406 1.157 2.146 2.378 2.146 1.11 0 1.954-.64 2.185-1.701h3.663zM15.5 12.5h4.167c-.085-1.196-.867-1.875-2.083-1.875-1.229 0-1.979.679-2.084 1.875zM8.667 12.5c1.472 0 2.833-.67 2.833-2.5 0-1.83-1.361-2.5-2.833-2.5H2v13h6.667c1.472 0 3.333-.67 3.333-3 0-2.33-1.861-3-3.333-3H5v-2h3.667zM5 9.5h3.667c.607 0 1.333.275 1.333 1s-.726 1-1.333 1H5V9.5zm0 8v-2.5h3.667c.607 0 1.833.275 1.833 1.25s-1.226 1.25-1.833 1.25H5z" />
+                    </svg>
+                    <span>BEHANCE</span>
+                  </a>
+                  <span class="contact-marquee-sep" aria-hidden="true">&bull;</span>
+                  <a href="https://github.com/SIVA-1O" target="_blank" rel="noopener noreferrer"
+                    class="contact-marquee-item" title="GitHub Profile" aria-hidden="true" tabindex="-1">
+                    <svg class="contact-marquee-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"
+                      aria-hidden="true">
+                      <path fill-rule="evenodd" clip-rule="evenodd"
+                        d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+                    </svg>
+                    <span>GITHUB</span>
+                  </a>
+                  <span class="contact-marquee-sep" aria-hidden="true">&bull;</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- SIVASURIYA ROUNDED EDITORIAL FOOTER (REFERENCE LAYOUT RECREATED) -->
+    <footer class="site-footer-module" id="site-footer" role="contentinfo" aria-label="Site Footer">
+      <div class="footer-card-container">
+        <div class="footer-rounded-card">
+          <!-- Top Row: Left Brand Info & Right 3 Nav Columns -->
+          <div class="footer-main-grid">
+            <!-- Left Brand Column -->
+            <div class="footer-brand-pane">
+              <div class="footer-brand-header">
+                <span class="footer-brand-logo">SIVASURIYA</span>
+                <span class="footer-brand-role">Multidisciplinary Graphic Designer / Visual Designer</span>
+              </div>
+              <p class="footer-brand-desc">
+                Creating visual identities, digital experiences, graphic systems and experimental design across
+                branding, digital, UI, motion and 3D.
+              </p>
+              <div class="footer-social-icons-row" aria-label="Social Profiles">
+                <a href="https://x.com/SIVAx10s" class="footer-social-icon-btn" data-social="twitter" target="_blank"
+                  rel="noopener noreferrer" aria-label="X / Twitter">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path
+                      d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  </svg>
+                </a>
+                <a href="https://www.instagram.com" class="footer-social-icon-btn" data-social="instagram"
+                  target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                  </svg>
+                </a>
+                <a href="https://www.linkedin.com/in/sivax10s" class="footer-social-icon-btn" data-social="linkedin"
+                  target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path
+                      d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
+                  </svg>
+                </a>
+                <a href="https://www.behance.net/sivax10s" class="footer-social-icon-btn" data-social="behance"
+                  target="_blank" rel="noopener noreferrer" aria-label="Behance">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path
+                      d="M22 7h-7V5h7v2zm1.726 10c-.442 1.297-2.029 3-4.971 3-3.467 0-5.755-2.5-5.755-6s2.288-6 5.755-6c3.466 0 5.245 2.5 5.245 5.5 0 .633-.075 1.055-.075 1.055H15.5c.105 1.406 1.157 2.146 2.378 2.146 1.11 0 1.954-.64 2.185-1.701h3.663zM15.5 12.5h4.167c-.085-1.196-.867-1.875-2.083-1.875-1.229 0-1.979.679-2.084 1.875zM8.667 12.5c1.472 0 2.833-.67 2.833-2.5 0-1.83-1.361-2.5-2.833-2.5H2v13h6.667c1.472 0 3.333-.67 3.333-3 0-2.33-1.861-3-3.333-3H5v-2h3.667zM5 9.5h3.667c.607 0 1.333.275 1.333 1s-.726 1-1.333 1H5V9.5zm0 8v-2.5h3.667c.607 0 1.833.275 1.833 1.25s-1.226 1.25-1.833 1.25H5z" />
+                  </svg>
+                </a>
+                <a href="https://dribbble.com" class="footer-social-icon-btn" data-social="dribbble" target="_blank"
+                  rel="noopener noreferrer" aria-label="Dribbble">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M19.13 5.09C15.22 9.14 10 10.44 2.25 10.94" />
+                    <path d="M21.75 12.84c-6.62-1.41-12.14 1-16.38 6.32" />
+                    <path d="M8.56 2.75c4.37 6 6 9.42 8 17.72" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+
+            <!-- Right 3 Navigation Columns -->
+            <div class="footer-cols-pane">
+              <!-- COLUMN 01: NAVIGATION -->
+              <div class="footer-nav-col">
+                <span class="footer-col-heading">NAVIGATION</span>
+                <nav class="footer-links-group" aria-label="Footer Navigation">
+                  <a href="#hero" class="footer-nav-link">ABOUT</a>
+                  <a href="#work" class="footer-nav-link">WORK</a>
+                  <a href="#disciplines" class="footer-nav-link">DISCIPLINES</a>
+                  <a href="#3d-model" class="footer-nav-link">3D MODEL</a>
+                  <a href="#archive" class="footer-nav-link">ARCHIVE</a>
+                </nav>
+              </div>
+
+              <!-- COLUMN 02: EXPLORE -->
+              <div class="footer-nav-col">
+                <span class="footer-col-heading">EXPLORE</span>
+                <nav class="footer-links-group" aria-label="Footer Explore">
+                  <a href="#experience" class="footer-nav-link">EXPERIENCE</a>
+                  <a href="#services" class="footer-nav-link">SERVICES</a>
+                  <a href="#tools" class="footer-nav-link">TOOLS</a>
+                  <a href="#contact" class="footer-nav-link">CONTACT</a>
+                </nav>
+              </div>
+
+              <!-- COLUMN 03: CONNECT -->
+              <div class="footer-nav-col">
+                <span class="footer-col-heading">CONNECT</span>
+                <div class="footer-links-group">
+                  <a href="https://www.linkedin.com/in/sivax10s" class="footer-nav-link" data-social="linkedin"
+                    target="_blank" rel="noopener noreferrer">LINKEDIN</a>
+                  <a href="https://www.behance.net/sivax10s" class="footer-nav-link" data-social="behance"
+                    target="_blank" rel="noopener noreferrer">BEHANCE</a>
+                  <a href="https://www.instagram.com" class="footer-nav-link" data-social="instagram" target="_blank"
+                    rel="noopener noreferrer">INSTAGRAM</a>
+                  <a href="https://dribbble.com" class="footer-nav-link" data-social="dribbble" target="_blank"
+                    rel="noopener noreferrer">DRIBBBLE</a>
+                  <a href="https://x.com/SIVAx10s" class="footer-nav-link" data-social="twitter" target="_blank"
+                    rel="noopener noreferrer">TWITTER / X</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Thin Horizontal Divider -->
+          <div class="footer-divider-line" aria-hidden="true"></div>
+
+          <!-- Bottom Bar: Copyright, Location, Back to Top -->
+          <div class="footer-bottom-bar">
+            <div class="footer-bottom-left">
+              <span>&copy; 2026 SIVASURIYA ALL RIGHTS RESERVED</span>
+            </div>
+            <div class="footer-bottom-center">
+              <span>CHENNAI, INDIA</span>
+            </div>
+            <div class="footer-bottom-right">
+              <a href="#hero" class="footer-back-to-top" id="footer-back-to-top" aria-label="Back to top">
+                <span>BACK TO TOP</span>
+                <span class="top-arr" aria-hidden="true">&uarr;</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- CANONICAL PROJECT MODAL VIEW (DEEP-LINKED / ACCESSIBLE) -->
+    <div class="project-modal-container" id="project-modal" role="dialog" aria-modal="true"
+      aria-label="Project Case Study">
+      <!-- Dynamic Project Ambient Background Layer (Dual Crossfade Engine) -->
+      <div class="project-modal-ambient-wrap" aria-hidden="true">
+        <div class="project-modal-ambient-layer is-active" id="modal-ambient-layer-0"></div>
+        <div class="project-modal-ambient-layer" id="modal-ambient-layer-1"></div>
+      </div>
+
+      <div class="project-modal-header">
+        <div class="brand-identity">
+          <span class="brand-logo" style="font-size: 1.05rem;">SIVASURIYA &bull; WORKS</span>
+        </div>
+        <button type="button" class="modal-close-btn" id="modal-close-trigger" aria-label="Close Project View (ESC)">
+          <span>CLOSE ARCHIVE [ESC]</span>
+        </button>
+      </div>
+      <div class="project-modal-content" id="project-modal-body">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Main Application Script (ES Module) -->
+  <script type="module" src="js/app.js?v=2.3"></script>
+
+</body>
+
+</html>

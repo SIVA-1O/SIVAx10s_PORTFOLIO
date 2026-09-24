@@ -1,0 +1,256 @@
+/* ==========================================================================
+   SIVASURIYA PORTFOLIO — CORE DESIGN SYSTEM (SWISS EDITORIAL + CONTEMPORARY)
+   ========================================================================== */
+
+
+
+:root {
+  --background: #080808;
+
+  --surface: #101010;
+  --surface-elevated: #151515;
+  --surface-panel: rgba(16, 18, 23, 0.92);
+
+  --surface-interactive: rgba(255, 255, 255, 0.07);
+  --surface-interactive-hover: rgba(255, 255, 255, 0.12);
+
+  --bg-body: #080808;
+  --bg-overlay: rgba(8, 8, 8, 0.34);
+
+  --text-primary: #F7F7F7;
+  --text-secondary: #D0D0D0;
+  --text-muted: #A6A6A6;
+  --text-inverse: #080808;
+
+  --border: rgba(255, 255, 255, 0.16);
+  --border-subtle: rgba(255, 255, 255, 0.11);
+  --border-medium: rgba(255, 255, 255, 0.20);
+  --border-strong: rgba(255, 255, 255, 0.40);
+
+  --accent-glow: rgba(255, 255, 255, 0.08);
+  --badge-bg: rgba(255, 255, 255, 0.08);
+  --badge-border: rgba(255, 255, 255, 0.16);
+
+  /* Typography */
+  --font-display: 'Syne', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Space Grotesk', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Spacing System */
+  --space-unit: clamp(0.75rem, 1vw, 1.25rem);
+  --page-padding: clamp(1.25rem, 4vw, 4.5rem);
+  --max-width: 1720px;
+
+  /* Motion & Easing */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-fast: 0.18s ease;
+  --transition-normal: 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-slow: 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+
+
+/* ==========================================================================
+   RESET & FOUNDATIONS
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-body);
+}
+
+body {
+  font-family: var(--font-body);
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background-color: transparent;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: clip;
+  cursor: default;
+  /* Standard native cursor only */
+}
+
+/* TARGET LAYER 0: 300-Frame Motion Background Canvas */
+#bg-canvas {
+  position: fixed;
+  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  visibility: visible;
+  opacity: 1;
+  z-index: -2;
+  pointer-events: none;
+}
+
+/* TARGET LAYER 1: Global Black Foreground Layer (Exact Match to Uploaded Reference) */
+.bg-blend-layer {
+  position: fixed;
+  inset: 0;
+  background-color: var(--bg-overlay);
+  z-index: -1;
+  pointer-events: none;
+  transition: background-color var(--transition-normal);
+}
+
+/* TARGET LAYER 2: Portfolio Content (Transparent backgrounds throughout) */
+.app-viewport {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+  z-index: 2;
+  background: transparent;
+}
+
+/* Print & PDF Export Optimization */
+@media print {
+
+  html,
+  body {
+    background-color: #080808 !important;
+    color: #f7f7f7 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  #bg-canvas,
+  .bg-blend-layer {
+    display: none !important;
+  }
+}
+
+.site-container {
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding-left: var(--page-padding);
+  padding-right: var(--page-padding);
+}
+
+/* Standard Typography Scales */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+p {
+  color: var(--text-secondary);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color var(--transition-fast), opacity var(--transition-fast);
+}
+
+img,
+picture,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+/* Section Header Swiss Style */
+.section-header-editorial {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: clamp(1.25rem, 2.5vw, 2.5rem);
+  border-top: 1px solid var(--border-medium);
+  padding-top: 1rem;
+}
+
+.section-kicker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.section-number {
+  font-family: var(--font-mono);
+  font-size: clamp(0.75rem, 0.9vw, 0.95rem);
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.section-category-tag {
+  font-family: var(--font-mono);
+  font-size: clamp(0.7rem, 0.85vw, 0.85rem);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.section-title-editorial {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 5.5vw, 5.2rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+  line-height: 0.95;
+  color: var(--text-primary);
+}
+
+.section-subtitle-editorial {
+  font-family: var(--font-heading);
+  font-size: clamp(1rem, 1.35vw, 1.4rem);
+  color: var(--text-secondary);
+  max-width: 54ch;
+  line-height: 1.45;
+}
+
+/* Reduced Motion Respect */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
