@@ -2346,13 +2346,59 @@
   text-overflow: ellipsis;
 }
 
+/* ==========================================================================
+   EDITORIAL READING PROGRESS INDICATOR & SCREEN-READER UTILITY
+   ========================================================================== */
+.scroll-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.55);
+  transform-origin: 0% 50%;
+  transform: scaleX(0);
+  pointer-events: none;
+  z-index: 10000;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-progress-bar {
+    display: none !important;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 .archive-view-toggle-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
   margin-bottom: 1.5rem;
-  padding-bottom: 0.75rem;
+  padding-bottom: 0.85rem;
   border-bottom: 1px solid var(--border-subtle);
+}
+
+.archive-toolbar-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  flex: 1 1 auto;
 }
 
 .archive-section-tagline {
@@ -2361,8 +2407,130 @@
   letter-spacing: 0.14em;
   color: var(--text-muted);
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
+.archive-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 280px;
+  max-width: 440px;
+  flex: 1 1 auto;
+}
+
+.archive-search-input-wrap {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.archive-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  color: var(--text-muted);
+  pointer-events: none;
+  transition: color var(--transition-fast);
+}
+
+.archive-search-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 2rem 0 2.25rem;
+  background: var(--surface-interactive);
+  border: 1px solid var(--border-subtle);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  outline: none;
+  transition: border-color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.archive-search-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.75;
+  font-size: 0.69rem;
+  letter-spacing: 0.08em;
+}
+
+.archive-search-input:focus {
+  border-color: #38bdf8;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.3);
+}
+
+.archive-search-input:focus + .archive-search-icon,
+.archive-search-input-wrap:focus-within .archive-search-icon {
+  color: #38bdf8;
+}
+
+.archive-search-clear-btn {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  border-radius: 2px;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.archive-search-clear-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.archive-view-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.2rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 2px;
+}
+
+.archive-view-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.75rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.archive-view-toggle-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+}
+
+.archive-view-toggle-btn.active {
+  background: var(--surface-interactive-hover);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+/* Backward compatibility for previous toggle buttons */
 .archive-toggle-btns {
   display: flex;
   align-items: center;
@@ -2387,6 +2555,7 @@
   border-color: var(--border-medium);
   background: var(--surface-elevated);
 }
+
 
 .filter-bar-container {
   display: flex;
@@ -2569,6 +2738,113 @@
 }
 
 /* --------------------------------------------------------------------------
+   ARCHIVE CARD "VIEW PROJECT" ACTION BUTTON
+   Tactile, restrained Swiss-inspired design system with micro-interactions
+   -------------------------------------------------------------------------- */
+.archive-card-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  background: var(--surface-interactive);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.55rem 0.95rem;
+  margin-top: 0.85rem;
+  cursor: pointer;
+  position: relative;
+  z-index: 12;
+  outline: none;
+  width: fit-content;
+  max-width: 100%;
+  border-radius: 0;
+  box-sizing: border-box;
+  transition: 
+    background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.archive-card-action-btn .action-btn-text {
+  letter-spacing: 0.14em;
+  transition: color 0.25s ease;
+}
+
+.archive-card-action-btn .action-btn-icon {
+  display: inline-block;
+  font-size: 0.8rem;
+  line-height: 1;
+  font-family: var(--font-mono);
+  transform: translate3d(0, 0, 0);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.25s ease;
+}
+
+/* Natural emphasis when parent Archive card is hovered */
+.archive-card:hover .archive-card-action-btn {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* Tactile button hover: subtle forward movement (-2px), arrow glides ~3px up/right */
+.archive-card-action-btn:hover {
+  background: rgba(56, 189, 248, 0.1);
+  border-color: rgba(56, 189, 248, 0.6);
+  color: #38bdf8;
+  transform: translate3d(0, -2px, 0);
+}
+
+.archive-card-action-btn:hover .action-btn-icon {
+  transform: translate3d(3px, -3px, 0);
+  color: #38bdf8;
+}
+
+/* Active / Pressed state */
+.archive-card-action-btn:active {
+  transform: translate3d(0, 0, 0);
+  background: rgba(56, 189, 248, 0.18);
+  border-color: #38bdf8;
+}
+
+/* Keyboard focus state (Accessibility) */
+.archive-card-action-btn:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+/* Mobile & Touch Responsiveness: Direct tappability, 44px min target, zero overflow */
+@media (max-width: 768px), (pointer: coarse) {
+  .archive-card-action-btn {
+    min-height: 44px;
+    padding: 0.75rem 1.15rem;
+    font-size: 0.72rem;
+    width: 100%;
+    justify-content: center;
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.06);
+    margin-top: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .archive-card-action-btn,
+  .archive-card-action-btn .action-btn-icon {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
 /* --------------------------------------------------------------------------
    08 — TOOLS ARCHIVE SECTION (COMPACT EDITORIAL MARQUEE TICKER)
    -------------------------------------------------------------------------- */
@@ -4837,5 +5113,402 @@ body.lightbox-locked {
 @media (max-width: 768px) {
   .dossier-columns-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   EDITORIAL ARCHIVE LIST VIEW (COMPACT ARCHITECTURAL DESIGN)
+   ========================================================================== */
+.archive-project-container.is-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: clamp(1.5rem, 2.5vw, 2.5rem);
+}
+
+.archive-project-container.is-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+.archive-list-row {
+  display: grid;
+  grid-template-columns: 44px minmax(200px, 2.2fr) minmax(170px, 1.4fr) minmax(220px, 2fr) 60px 90px;
+  align-items: center;
+  padding: 0.95rem 1.25rem;
+  background-color: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  border-left: 2px solid transparent;
+  border-radius: 2px;
+  cursor: pointer;
+  position: relative;
+  text-decoration: none;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+  outline: none;
+}
+
+.archive-list-row:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+  border-color: var(--border-medium);
+  border-left-color: #38bdf8;
+  transform: translateX(4px);
+}
+
+.archive-list-row:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+.archive-list-cell {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.archive-list-cell-num {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+.archive-list-cell-main {
+  flex-direction: column;
+  align-items: flex-start;
+  padding-right: 1.25rem;
+}
+
+.archive-list-title {
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin: 0;
+  transition: color var(--transition-fast);
+}
+
+.archive-list-row:hover .archive-list-title {
+  color: #38bdf8;
+}
+
+.archive-list-subtitle {
+  font-family: var(--font-body);
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  margin-top: 0.15rem;
+}
+
+.archive-list-cell-discipline {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  padding-right: 1.25rem;
+}
+
+.archive-list-category-badge {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #38bdf8;
+}
+
+.archive-list-subcat {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.archive-list-cell-tools {
+  padding-right: 1.25rem;
+}
+
+.archive-list-tool-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.archive-list-tool-tag {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  padding: 0.2rem 0.5rem;
+  background: var(--surface-interactive);
+  border: 1px solid var(--border-subtle);
+  border-radius: 2px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+}
+
+.archive-list-cell-year {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+.archive-list-cell-action {
+  justify-content: flex-end;
+}
+
+.archive-list-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  transition: color var(--transition-fast), transform var(--transition-fast);
+}
+
+.archive-list-row:hover .archive-list-cta {
+  color: #38bdf8;
+  transform: translateX(2px);
+}
+
+/* Archive Empty State */
+.archive-empty-state {
+  width: 100%;
+  grid-column: 1 / -1;
+  padding: 3.5rem 1.5rem;
+  border: 1px dashed var(--border-medium);
+  background: rgba(16, 18, 23, 0.4);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.archive-empty-code {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  letter-spacing: 0.16em;
+  color: #38bdf8;
+}
+
+.archive-empty-msg {
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  max-width: 480px;
+  line-height: 1.5;
+}
+
+.archive-reset-btn {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  background: var(--surface-interactive);
+  border: 1px solid var(--border-subtle);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.archive-reset-btn:hover {
+  background: #38bdf8;
+  color: #080808;
+  border-color: #38bdf8;
+}
+
+/* ==========================================================================
+   EDITORIAL KEYBOARD NAVIGATION MODAL OVERLAY (TRIGGERED VIA '?')
+   ========================================================================== */
+.keyboard-guide-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10005;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.22s var(--ease-out-expo), visibility 0.22s;
+}
+
+.keyboard-guide-overlay.is-active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.keyboard-guide-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 8, 12, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.keyboard-guide-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  background: #0d0f14;
+  border: 1px solid var(--border-medium);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(56, 189, 248, 0.15);
+  border-radius: 2px;
+  overflow: hidden;
+  transform: translateY(12px) scale(0.98);
+  transition: transform 0.25s var(--ease-out-expo);
+}
+
+.keyboard-guide-overlay.is-active .keyboard-guide-dialog {
+  transform: translateY(0) scale(1);
+}
+
+.keyboard-guide-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.keyboard-guide-tag {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  color: #38bdf8;
+  margin-bottom: 0.2rem;
+}
+
+.keyboard-guide-title {
+  font-family: var(--font-heading);
+  font-size: 1.12rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.keyboard-guide-close {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all var(--transition-fast);
+}
+
+.keyboard-guide-close:hover {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+  background: var(--surface-interactive);
+}
+
+.keyboard-guide-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-height: 65vh;
+  overflow-y: auto;
+}
+
+.keyboard-guide-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.keyboard-guide-group-label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.keyboard-guide-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.85rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-subtle);
+  border-radius: 2px;
+  transition: background var(--transition-fast);
+}
+
+.keyboard-guide-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border-medium);
+}
+
+.keyboard-key-combo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.keyboard-key-combo kbd,
+.keyboard-guide-footer kbd {
+  display: inline-block;
+  min-width: 28px;
+  height: 26px;
+  line-height: 24px;
+  text-align: center;
+  padding: 0 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #38bdf8;
+  background: #14171f;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-bottom: 2px solid rgba(56, 189, 248, 0.6);
+  border-radius: 3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.keyboard-key-desc {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.keyboard-guide-footer {
+  padding: 0.9rem 1.5rem;
+  background: rgba(0, 0, 0, 0.4);
+  border-top: 1px solid var(--border-subtle);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .keyboard-guide-overlay,
+  .keyboard-guide-dialog,
+  .archive-list-row {
+    transition: none !important;
   }
 }

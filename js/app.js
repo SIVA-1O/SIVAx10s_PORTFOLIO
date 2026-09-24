@@ -73,6 +73,8 @@ const TOOL_ICONS = {
 class PortfolioApp {
   constructor() {
     this.activeFilter = 'ALL';
+    this.searchQuery = '';
+    this.viewMode = 'grid'; // 'grid' | 'list'
     this.lightbox = null;
     this.threeViewer = null;
     this.motionPlayer = null;
@@ -90,7 +92,11 @@ class PortfolioApp {
     // 2. Initialize Lightbox
     this.lightbox = new Lightbox();
 
-    // 3. Render All Dynamic Content
+    // 3. Setup Editorial Scroll Reading Progress & Keyboard Power Navigation
+    this.setupScrollProgress();
+    this.setupKeyboardNavigation();
+
+    // 4. Render All Dynamic Content
     this.renderHero();
     this.initHeroConnectButton();
     this.renderDisciplines();
@@ -101,10 +107,10 @@ class PortfolioApp {
     this.renderTools();
     this.renderContact();
 
-    // 4. Initialize 3D Interactive Viewer
+    // 5. Initialize 3D Interactive Viewer
     this.initThreeViewer();
 
-    // 5. Navigation & Routing
+    // 6. Navigation & Routing
     this.setupNavigation();
     this.setupMagneticCTA();
     this.initModalAmbientEngine();
@@ -112,7 +118,7 @@ class PortfolioApp {
     this.setupTimeClock();
     this.setupAudioSound();
 
-    // 6. High-Impact Restrained Interactivity Engine
+    // 7. High-Impact Restrained Interactivity Engine
     this.interactivity = new InteractivityEngine();
   }
 
@@ -524,6 +530,74 @@ class PortfolioApp {
       } else {
         setTimeout(loadArchiveGrid, 2500);
       }
+
+      // Initialize Real-time Search and View Mode Toggle Controls
+      this.setupArchiveControls();
+    }
+  }
+
+  setupArchiveControls() {
+    const searchInput = document.getElementById('archive-search-input');
+    const searchClear = document.getElementById('archive-search-clear');
+    const gridBtn = document.getElementById('archive-view-grid');
+    const listBtn = document.getElementById('archive-view-list');
+
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        this.searchQuery = e.target.value;
+        if (searchClear) {
+          searchClear.style.display = this.searchQuery ? 'flex' : 'none';
+        }
+        if (this.ensureArchiveGrid) this.ensureArchiveGrid();
+        this.renderFilteredArchiveGrid();
+      });
+
+      // Clear search when ESC is pressed while focused in search input
+      searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          if (this.searchQuery) {
+            e.stopPropagation();
+            this.searchQuery = '';
+            searchInput.value = '';
+            if (searchClear) searchClear.style.display = 'none';
+            this.renderFilteredArchiveGrid();
+          }
+        }
+      });
+    }
+
+    if (searchClear) {
+      searchClear.addEventListener('click', () => {
+        this.searchQuery = '';
+        if (searchInput) {
+          searchInput.value = '';
+          searchInput.focus();
+        }
+        searchClear.style.display = 'none';
+        if (this.ensureArchiveGrid) this.ensureArchiveGrid();
+        this.renderFilteredArchiveGrid();
+      });
+    }
+
+    const setViewMode = (mode) => {
+      this.viewMode = mode;
+      if (gridBtn) {
+        gridBtn.classList.toggle('active', mode === 'grid');
+        gridBtn.setAttribute('aria-pressed', mode === 'grid' ? 'true' : 'false');
+      }
+      if (listBtn) {
+        listBtn.classList.toggle('active', mode === 'list');
+        listBtn.setAttribute('aria-pressed', mode === 'list' ? 'true' : 'false');
+      }
+      if (this.ensureArchiveGrid) this.ensureArchiveGrid();
+      this.renderFilteredArchiveGrid();
+    };
+
+    if (gridBtn) {
+      gridBtn.addEventListener('click', () => setViewMode('grid'));
+    }
+    if (listBtn) {
+      listBtn.addEventListener('click', () => setViewMode('list'));
     }
   }
 
@@ -533,53 +607,219 @@ class PortfolioApp {
     buttons.forEach((btn) => {
       btn.classList.toggle('active', btn.getAttribute('data-filter') === category);
     });
+    if (this.ensureArchiveGrid) this.ensureArchiveGrid();
     this.renderFilteredArchiveGrid();
+  }
+
+  escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
   renderFilteredArchiveGrid() {
     const gridContainer = document.getElementById('archive-grid');
     if (!gridContainer) return;
 
+    const query = (this.searchQuery || '').trim().toLowerCase();
+    const activeCategory = (this.activeFilter || 'ALL').toUpperCase();
+
     const filtered = PROJECTS.filter((p) => {
-      if (this.activeFilter === 'ALL') return true;
-      const prim = p.primaryCategory.toUpperCase() === this.activeFilter.toUpperCase();
-      const sec = (p.secondaryCategories || []).some((sc) => sc.toUpperCase() === this.activeFilter.toUpperCase());
-      return prim || sec;
+      // 1. Discipline / Category filter
+      let matchesCat = true;
+      if (activeCategory !== 'ALL') {
+        const prim = (p.primaryCategory || '').toUpperCase() === activeCategory;
+        const sec = (p.secondaryCategories || []).some((sc) => sc.toUpperCase() === activeCategory);
+        matchesCat = prim || sec;
+      }
+      if (!matchesCat) return false;
+
+      // 2. Real-time Search query matching across existing metadata only
+      if (!query) return true;
+
+      const titleMatch = (p.title || '').toLowerCase().includes(query);
+      const subtitleMatch = (p.subtitle || '').toLowerCase().includes(query);
+      const catMatch = (p.primaryCategory || '').toLowerCase().includes(query);
+      const secMatch = (p.secondaryCategories || []).some((sc) => sc.toLowerCase().includes(query));
+      const toolsMatch = (p.tools || []).some((t) => t.toLowerCase().includes(query));
+      const yearMatch = (p.year ? String(p.year) : '').toLowerCase().includes(query);
+      const tagsMatch = (p.tags || []).some((tag) => tag.toLowerCase().includes(query));
+      const descMatch = (p.description || '').toLowerCase().includes(query);
+      const sysMatch = (p.visualSystem || '').toLowerCase().includes(query);
+
+      return titleMatch || subtitleMatch || catMatch || secMatch || toolsMatch || yearMatch || tagsMatch || descMatch || sysMatch;
     });
 
-    gridContainer.innerHTML = filtered.map((p) => {
-      const heroImg = p.heroImage || (p.images[0] ? p.images[0].src : '');
-      const secTags = (p.secondaryCategories || []).map((sc) => `<span class="archive-secondary-tag">${sc}</span>`).join('');
+    // Update container class for grid vs list
+    if (this.viewMode === 'list') {
+      gridContainer.className = 'archive-project-container is-list';
+    } else {
+      gridContainer.className = 'archive-project-grid archive-project-container is-grid';
+    }
 
-      return `
-        <article class="archive-card" data-open-project="${p.id}" data-category="${p.primaryCategory}">
-          <div class="archive-card-thumb" data-category="${p.primaryCategory}">
-            <img src="${heroImg}" alt="${p.title}" loading="lazy" decoding="async" />
-          </div>
-          <div class="archive-card-body">
-            <div class="archive-card-meta">
-              <span class="archive-card-category" data-category="${p.primaryCategory}">${p.primaryCategory}</span>
-              <span>${p.year}</span>
-            </div>
-            <h4 class="archive-card-title">${p.title}</h4>
-            <div class="archive-card-secondary-tags">
-              ${secTags}
-            </div>
-            <div class="archive-quick-dossier-btn" aria-label="Open Project Dossier">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-              <span>VIEW DOSSIER</span>
-            </div>
-          </div>
-        </article>
+    // Handle Empty Results
+    if (filtered.length === 0) {
+      const escapedQuery = this.escapeHtml(query);
+      gridContainer.innerHTML = `
+        <div class="archive-empty-state">
+          <div class="archive-empty-code">00 / NO MATCHING SPECIMENS</div>
+          <p class="archive-empty-msg">No archive projects match the current query "${escapedQuery}"${activeCategory !== 'ALL' ? ` under ${activeCategory}` : ''}.</p>
+          <button type="button" class="archive-reset-btn" id="archive-reset-filters">CLEAR FILTERS</button>
+        </div>
       `;
-    }).join('');
 
-    gridContainer.querySelectorAll('[data-open-project]').forEach((card) => {
-      card.addEventListener('click', () => {
-        const pid = card.getAttribute('data-open-project');
-        this.openProjectModal(pid);
+      const resetBtn = gridContainer.querySelector('#archive-reset-filters');
+      if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+          this.searchQuery = '';
+          const searchInput = document.getElementById('archive-search-input');
+          const searchClear = document.getElementById('archive-search-clear');
+          if (searchInput) searchInput.value = '';
+          if (searchClear) searchClear.style.display = 'none';
+          this.setFilter('ALL');
+        });
+      }
+      return;
+    }
+
+    if (this.viewMode === 'list') {
+      // LIST VIEW: Transform projects into a compact architectural editorial list
+      gridContainer.innerHTML = filtered.map((p, index) => {
+        const itemNumber = String(index + 1).padStart(2, '0');
+        const secText = (p.secondaryCategories && p.secondaryCategories.length)
+          ? `<span class="archive-list-subcat">${p.secondaryCategories.join(' &bull; ')}</span>`
+          : '';
+        const toolsMarkup = (p.tools || []).slice(0, 3).map((t) => `<span class="archive-list-tool-tag">${t}</span>`).join('');
+
+        return `
+          <article
+            class="archive-list-row"
+            data-open-project="${p.id}"
+            tabindex="0"
+            role="button"
+            aria-label="Inspect ${p.title} dossier"
+          >
+            <div class="archive-list-cell archive-list-cell-num">
+              <span class="archive-list-index">${itemNumber}</span>
+            </div>
+            <div class="archive-list-cell archive-list-cell-main">
+              <h4 class="archive-list-title">${p.title}</h4>
+              <span class="archive-list-subtitle">${p.subtitle || ''}</span>
+            </div>
+            <div class="archive-list-cell archive-list-cell-discipline">
+              <span class="archive-list-category-badge">${p.primaryCategory}</span>
+              ${secText}
+            </div>
+            <div class="archive-list-cell archive-list-cell-tools">
+              <div class="archive-list-tool-tags">
+                ${toolsMarkup}
+              </div>
+            </div>
+            <div class="archive-list-cell archive-list-cell-year">
+              <span class="archive-list-year-tag">${p.year}</span>
+            </div>
+            <div class="archive-list-cell archive-list-cell-action" aria-hidden="true">
+              <span class="archive-list-cta">
+                <span>VIEW PROJECT</span>
+                <span class="action-btn-icon" aria-hidden="true">↗</span>
+              </span>
+            </div>
+          </article>
+        `;
+      }).join('');
+    } else {
+      // GRID VIEW: Preserve exact current Archive card design with polished VIEW PROJECT button
+      gridContainer.innerHTML = filtered.map((p) => {
+        const heroImg = p.heroImage || (p.images[0] ? p.images[0].src : '');
+        const secTags = (p.secondaryCategories || []).map((sc) => `<span class="archive-secondary-tag">${sc}</span>`).join('');
+
+        return `
+          <article class="archive-card" data-open-project="${p.id}" data-category="${p.primaryCategory}">
+            <div class="archive-card-thumb" data-category="${p.primaryCategory}">
+              <img src="${heroImg}" alt="${p.title}" loading="lazy" decoding="async" />
+            </div>
+            <div class="archive-card-body">
+              <div class="archive-card-meta">
+                <span class="archive-card-category" data-category="${p.primaryCategory}">${p.primaryCategory}</span>
+                <span>${p.year}</span>
+              </div>
+              <h4 class="archive-card-title">${p.title}</h4>
+              <div class="archive-card-secondary-tags">
+                ${secTags}
+              </div>
+              <button
+                type="button"
+                class="archive-card-action-btn"
+                data-project-id="${p.id}"
+                data-open-project="${p.id}"
+                aria-label="View ${p.title} project details"
+              >
+                <span class="action-btn-text">VIEW PROJECT</span>
+                <span class="action-btn-icon" aria-hidden="true">↗</span>
+              </button>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    // Direct event handlers for VIEW PROJECT buttons (with stopPropagation to prevent conflict with card hover/scrub)
+    gridContainer.querySelectorAll('.archive-card-action-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const pid = btn.getAttribute('data-project-id') || btn.getAttribute('data-open-project');
+        if (pid) this.openProjectModal(pid);
+      });
+      btn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          e.stopPropagation();
+          const pid = btn.getAttribute('data-project-id') || btn.getAttribute('data-open-project');
+          if (pid) this.openProjectModal(pid);
+        }
       });
     });
+
+    // Card-level click handlers for the rest of the card
+    gridContainer.querySelectorAll('[data-open-project]').forEach((card) => {
+      if (card.classList.contains('archive-card-action-btn')) return;
+      const pid = card.getAttribute('data-open-project');
+      card.addEventListener('click', () => {
+        this.openProjectModal(pid);
+      });
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          this.openProjectModal(pid);
+        }
+      });
+    });
+
+    // Container event delegation guard: guarantees that dynamic re-rendering or filtering never loses click handling
+    if (!gridContainer.dataset.delegationAttached) {
+      gridContainer.dataset.delegationAttached = 'true';
+      gridContainer.addEventListener('click', (e) => {
+        const btn = e.target.closest('.archive-card-action-btn');
+        if (btn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const pid = btn.getAttribute('data-project-id') || btn.getAttribute('data-open-project');
+          if (pid) this.openProjectModal(pid);
+          return;
+        }
+
+        const card = e.target.closest('[data-open-project]');
+        if (card && !e.target.closest('.archive-card-thumb')) {
+          const pid = card.getAttribute('data-open-project');
+          if (pid) this.openProjectModal(pid);
+        }
+      });
+    }
 
     if (this.interactivity && typeof this.interactivity.refreshCards === 'function') {
       this.interactivity.refreshCards();
@@ -1434,7 +1674,23 @@ class PortfolioApp {
      CANONICAL PROJECT MODAL VIEW (ONE CANONICAL URL PER PROJECT)
      ------------------------------------------------------------------------ */
   openProjectModal(projectId) {
-    const project = PROJECTS.find((p) => p.id === projectId);
+    if (!projectId) return;
+    const cleanId = String(projectId).trim().toLowerCase();
+
+    // 1. Exact ID match
+    let project = PROJECTS.find((p) => p.id && p.id.toLowerCase() === cleanId);
+    // 2. Exact Title match
+    if (!project) {
+      project = PROJECTS.find((p) => p.title && p.title.toLowerCase() === cleanId);
+    }
+    // 3. Slug-normalized match (strip hyphens and non-alphanumeric)
+    if (!project) {
+      project = PROJECTS.find((p) => {
+        const slugA = (p.id || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const slugB = cleanId.replace(/[^a-z0-9]/g, '');
+        return slugA && slugA === slugB;
+      });
+    }
     if (!project) return;
 
     window.location.hash = `project-${project.id}`;
@@ -1888,11 +2144,7 @@ class PortfolioApp {
       modalCloseBtn.addEventListener('click', () => this.closeProjectModal());
     }
 
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !this.lightbox.isOpen) {
-        this.closeProjectModal();
-      }
-    });
+    // Keydown dismissal is unified inside setupKeyboardNavigation()
 
     // Handle deep-link direct navigation (#project-zesis)
     window.addEventListener('hashchange', () => {
@@ -2021,12 +2273,7 @@ class PortfolioApp {
       });
     });
 
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && drawer && drawer.classList.contains('is-open')) {
-        drawer.classList.remove('is-open');
-        document.body.style.overflow = '';
-      }
-    });
+    // Mobile drawer Escape key dismissal is unified inside setupKeyboardNavigation()
 
     // 5. Back to Top Smooth Scroll (Section 26)
     document.querySelectorAll('#footer-back-to-top, .footer-top-btn').forEach((btn) => {
@@ -2204,6 +2451,172 @@ class PortfolioApp {
         if (currentPref === 'on' && isPlaying && this.bgAudio) {
           this.bgAudio.play().catch(() => { });
         }
+      }
+    });
+  }
+
+  /* ------------------------------------------------------------------------
+     FEATURE 2: EDITORIAL READING PROGRESS
+     Razor-thin (2px) scroll indicator fixed to the top (#38bdf8)
+     Hardware-friendly (transform: scaleX), no permanent animation loop
+     Respects prefers-reduced-motion
+     ------------------------------------------------------------------------ */
+  setupScrollProgress() {
+    const progressBar = document.getElementById('scroll-progress');
+    if (!progressBar) return;
+
+    let ticking = false;
+
+    const updateScrollProgress = () => {
+      const scrollY = window.scrollY || window.pageYOffset || 0;
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = scrollHeight > 0 ? Math.min(1, Math.max(0, scrollY / scrollHeight)) : 0;
+      progressBar.style.transform = `scaleX(${progress})`;
+      ticking = false;
+    };
+
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        window.requestAnimationFrame(updateScrollProgress);
+        ticking = true;
+      }
+    }, { passive: true });
+
+    window.addEventListener('resize', () => {
+      if (!ticking) {
+        window.requestAnimationFrame(updateScrollProgress);
+        ticking = true;
+      }
+    }, { passive: true });
+
+    updateScrollProgress();
+  }
+
+  /* ------------------------------------------------------------------------
+     FEATURE 3: KEYBOARD POWER NAVIGATION
+     1..5 section jumping, ESC overlay dismissal, M audio toggle, '?' guide
+     Strict guard against interrupting input/textarea editing
+     ------------------------------------------------------------------------ */
+  setupKeyboardNavigation() {
+    const guideModal = document.getElementById('keyboard-guide-modal');
+    const guideCloseBtn = document.getElementById('keyboard-guide-close');
+    const guideBackdrop = document.getElementById('keyboard-guide-backdrop');
+
+    const openGuide = () => {
+      if (!guideModal) return;
+      guideModal.classList.add('is-active');
+      guideModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      if (guideCloseBtn) guideCloseBtn.focus();
+    };
+
+    const closeGuide = () => {
+      if (!guideModal) return;
+      guideModal.classList.remove('is-active');
+      guideModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    };
+
+    const isGuideOpen = () => guideModal && guideModal.classList.contains('is-active');
+
+    if (guideCloseBtn) guideCloseBtn.addEventListener('click', closeGuide);
+    if (guideBackdrop) guideBackdrop.addEventListener('click', closeGuide);
+
+    window.addEventListener('keydown', (e) => {
+      // 1. Do NOT hijack browser/system shortcuts (Ctrl, Meta, Alt)
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+      const activeEl = document.activeElement;
+      const isEditing = activeEl && (
+        activeEl.tagName === 'INPUT' ||
+        activeEl.tagName === 'TEXTAREA' ||
+        activeEl.isContentEditable ||
+        activeEl.getAttribute('contenteditable') === 'true'
+      );
+
+      // 2. ESC key: Dismiss open overlays or blur focused input
+      if (e.key === 'Escape') {
+        if (isGuideOpen()) {
+          e.preventDefault();
+          closeGuide();
+          return;
+        }
+
+        if (this.lightbox && this.lightbox.isOpen) {
+          e.preventDefault();
+          this.lightbox.close();
+          return;
+        }
+
+        const projectModal = document.getElementById('project-modal');
+        if (projectModal && (projectModal.classList.contains('is-active') || projectModal.classList.contains('is-open'))) {
+          e.preventDefault();
+          this.closeProjectModal();
+          return;
+        }
+
+        const drawer = document.getElementById('mobile-drawer');
+        if (drawer && drawer.classList.contains('is-open')) {
+          e.preventDefault();
+          drawer.classList.remove('is-open');
+          document.body.style.overflow = '';
+          return;
+        }
+
+        if (isEditing) {
+          activeEl.blur();
+          return;
+        }
+
+        return;
+      }
+
+      // 3. When focused in input or textarea, DO NOT intercept normal typing
+      if (isEditing) return;
+
+      // 4. Shortcut '?': Toggle keyboard shortcuts guide overlay
+      if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+        e.preventDefault();
+        if (isGuideOpen()) {
+          closeGuide();
+        } else {
+          openGuide();
+        }
+        return;
+      }
+
+      // If the guide modal is open, don't execute section shortcuts underneath
+      if (isGuideOpen()) return;
+
+      // 5. Shortcut 'M' / 'm': Toggle existing sound system
+      if (e.key === 'm' || e.key === 'M') {
+        e.preventDefault();
+        const soundBtn = document.getElementById('sound-toggle');
+        if (soundBtn) soundBtn.click();
+        return;
+      }
+
+      // 6. Section Navigation: 1..5
+      if (e.key === '1') {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else if (e.key === '2') {
+        e.preventDefault();
+        const el = document.getElementById('work');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      } else if (e.key === '3') {
+        e.preventDefault();
+        const el = document.getElementById('disciplines');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      } else if (e.key === '4') {
+        e.preventDefault();
+        if (this.loadThreeViewer) this.loadThreeViewer();
+        const el = document.getElementById('3d-model');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      } else if (e.key === '5') {
+        e.preventDefault();
+        const el = document.getElementById('contact');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
       }
     });
   }

@@ -48,7 +48,8 @@ export class InteractivityEngine {
       '.hero-download-btn',
       '.filter-pill-btn',
       '.nav-link',
-      '.archive-toggle-btn'
+      '.archive-toggle-btn',
+      '.archive-card-action-btn'
     ];
 
     const attachMagnetic = (el) => {
