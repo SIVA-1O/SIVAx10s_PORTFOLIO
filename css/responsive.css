@@ -23,13 +23,6 @@ html, body {
     grid-template-columns: 1fr;
     gap: 3rem;
   }
-
-  .editorial-project-row .project-media-col {
-    grid-column: 1 / span 8;
-  }
-  .editorial-project-row .project-info-col {
-    grid-column: 9 / span 4;
-  }
 }
 
 /* --------------------------------------------------------------------------
@@ -48,14 +41,8 @@ html, body {
     grid-template-columns: 1fr;
   }
 
-  .editorial-project-row {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-
-  .editorial-project-row .project-media-col,
-  .editorial-project-row .project-info-col {
-    grid-column: 1 / -1;
+  .selected-work-grid {
+    gap: 2rem;
   }
 
   .experience-showcase-grid {
@@ -105,6 +92,15 @@ html, body {
 
   .experience-visual-frame img {
     max-height: 380px;
+  }
+
+  .selected-work-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .editorial-project-row .project-visual-frame img {
+    max-height: 280px;
   }
 
   .project-visual-frame {

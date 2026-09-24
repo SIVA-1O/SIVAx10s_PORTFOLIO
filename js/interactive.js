@@ -15,6 +15,7 @@ import { PROJECTS } from './data.js';
 export class InteractivityEngine {
   constructor() {
     this.isTouch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    this.hasFinePointer = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
     this.prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.bgVideo = document.getElementById('bg-video');
 
@@ -22,9 +23,10 @@ export class InteractivityEngine {
     this.mouse = { x: 0, y: 0, normX: 0, normY: 0 };
     this.scrollY = window.scrollY || 0;
     this.isParallaxPending = false;
+    this.parallaxRafId = null;
     this.boundCards = new WeakSet();
 
-    if (!this.prefersReducedMotion && !this.isTouch) {
+    if (!this.prefersReducedMotion && this.hasFinePointer && !this.isTouch) {
       this.init();
     }
   }
@@ -123,6 +125,7 @@ export class InteractivityEngine {
 
       let rect = null;
       let isHovered = false;
+      let tiltRafId = null;
 
       const onPointerEnter = () => {
         isHovered = true;
@@ -134,24 +137,38 @@ export class InteractivityEngine {
         if (!isHovered) return;
         if (!rect) rect = card.getBoundingClientRect();
 
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const xPct = Math.max(0, Math.min(1, x / rect.width));
-        const yPct = Math.max(0, Math.min(1, y / rect.height));
+        const clientX = e.clientX;
+        const clientY = e.clientY;
 
-        // Subtle tilt: max 4 degrees
-        const tiltX = ((0.5 - yPct) * 4.5).toFixed(2);
-        const tiltY = ((xPct - 0.5) * 4.5).toFixed(2);
+        if (!tiltRafId) {
+          tiltRafId = requestAnimationFrame(() => {
+            tiltRafId = null;
+            if (!isHovered || !rect) return;
 
-        card.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateZ(3px)`;
-        card.style.setProperty('--mouse-x', `${(xPct * 100).toFixed(1)}%`);
-        card.style.setProperty('--mouse-y', `${(yPct * 100).toFixed(1)}%`);
-        card.style.setProperty('--glare-opacity', '0.65');
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+            const xPct = Math.max(0, Math.min(1, x / rect.width));
+            const yPct = Math.max(0, Math.min(1, y / rect.height));
+
+            // Subtle tilt: max 4 degrees
+            const tiltX = ((0.5 - yPct) * 4.5).toFixed(2);
+            const tiltY = ((xPct - 0.5) * 4.5).toFixed(2);
+
+            card.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateZ(3px)`;
+            card.style.setProperty('--mouse-x', `${(xPct * 100).toFixed(1)}%`);
+            card.style.setProperty('--mouse-y', `${(yPct * 100).toFixed(1)}%`);
+            card.style.setProperty('--glare-opacity', '0.65');
+          });
+        }
       };
 
       const onPointerLeave = () => {
         isHovered = false;
         rect = null;
+        if (tiltRafId) {
+          cancelAnimationFrame(tiltRafId);
+          tiltRafId = null;
+        }
         card.style.transition = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease';
         card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0)';
         card.style.setProperty('--glare-opacity', '0');
@@ -229,6 +246,13 @@ export class InteractivityEngine {
       this.scrollY = window.scrollY || 0;
       requestTick();
     }, { passive: true });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && this.parallaxRafId) {
+        cancelAnimationFrame(this.parallaxRafId);
+        this.isParallaxPending = false;
+      }
+    });
   }
 
   /**
@@ -282,14 +306,22 @@ export class InteractivityEngine {
         });
       };
 
+      let thumbRect = null;
+
+      thumb.addEventListener('pointerenter', () => {
+        thumbRect = thumb.getBoundingClientRect();
+      }, { passive: true });
+
       thumb.addEventListener('pointermove', (e) => {
-        const rect = thumb.getBoundingClientRect();
-        const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
-        const idx = Math.min(totalImages - 1, Math.floor((x / rect.width) * totalImages));
+        if (!thumbRect) thumbRect = thumb.getBoundingClientRect();
+        const width = thumbRect.width || 1;
+        const x = Math.max(0, Math.min(width, e.clientX - thumbRect.left));
+        const idx = Math.min(totalImages - 1, Math.floor((x / width) * totalImages));
         updateFrame(idx);
       }, { passive: true });
 
       thumb.addEventListener('pointerleave', () => {
+        thumbRect = null;
         updateFrame(0);
         img.src = originalSrc;
       }, { passive: true });

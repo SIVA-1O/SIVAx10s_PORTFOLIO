@@ -765,15 +765,29 @@ export class ThreeViewer {
       this.intersectionObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           this.isOffscreen = !entry.isIntersecting;
-          this.isPaused = this.isOffscreen || document.hidden;
+          this.setPaused(this.isOffscreen || document.hidden);
         });
       }, { threshold: 0.05 });
       this.intersectionObserver.observe(this.container);
     }
 
-    document.addEventListener('visibilitychange', () => {
-      this.isPaused = document.hidden || this.isOffscreen;
-    });
+    this.onVisibilityChange = () => {
+      this.setPaused(document.hidden || this.isOffscreen);
+    };
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
+  }
+
+  setPaused(paused) {
+    const wasPaused = this.isPaused;
+    this.isPaused = !!paused;
+    if (this.isPaused) {
+      if (this.animId) {
+        cancelAnimationFrame(this.animId);
+        this.animId = null;
+      }
+    } else if (wasPaused && !this.animId) {
+      this.animate();
+    }
   }
 
   setupKeyboardShortcuts() {
@@ -1862,10 +1876,13 @@ export class ThreeViewer {
   }
 
   animate() {
-    this.animId = requestAnimationFrame(() => this.animate());
+    // Cease scheduling frames when off-screen or tab hidden (0% CPU / GPU consumption)
+    if (this.isPaused) {
+      this.animId = null;
+      return;
+    }
 
-    // Skip rendering when off-screen to conserve CPU/GPU
-    if (this.isPaused) return;
+    this.animId = requestAnimationFrame(() => this.animate());
 
     this.time += 0.02;
 

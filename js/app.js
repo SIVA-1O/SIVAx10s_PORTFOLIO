@@ -352,7 +352,7 @@ class PortfolioApp {
       const visualSrc = disciplineVisuals[d.id] || '';
       return `
         <div class="discipline-card discipline-${d.number}" data-discipline="${d.name}" tabindex="0" role="button" aria-label="Explore ${d.name} projects in archive">
-          ${visualSrc ? `<div class="discipline-card-bg-visual" style="background-image: url('${visualSrc}');" aria-hidden="true"></div>` : ''}
+          ${visualSrc ? `<div class="discipline-card-bg-visual" data-bg-src="${visualSrc}" aria-hidden="true"></div>` : ''}
           <div class="discipline-card-header">
             <span class="discipline-card-number">${d.number}</span>
             <span class="discipline-card-kicker">${d.kicker}</span>
@@ -369,8 +369,43 @@ class PortfolioApp {
       `;
     }).join('');
 
+    // Lazy-hydrate card background images when Section approaches viewport
+    const hydrateVisuals = () => {
+      container.querySelectorAll('.discipline-card-bg-visual[data-bg-src]').forEach((el) => {
+        const src = el.getAttribute('data-bg-src');
+        if (src) {
+          el.style.backgroundImage = `url('${src}')`;
+          el.removeAttribute('data-bg-src');
+        }
+      });
+    };
+
+    const discSection = document.getElementById('disciplines');
+    if ('IntersectionObserver' in window && discSection) {
+      const discObserver = new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            hydrateVisuals();
+            discObserver.disconnect();
+          }
+        });
+      }, { rootMargin: '300px 0px' });
+      discObserver.observe(discSection);
+    } else {
+      setTimeout(hydrateVisuals, 2000);
+    }
+
     // Clicking or pressing Enter/Space on a discipline card filters All Work and scrolls down smoothly
     container.querySelectorAll('.discipline-card').forEach((card) => {
+      // Immediate hydration on pointer hover/focus
+      card.addEventListener('pointerenter', () => {
+        const bg = card.querySelector('.discipline-card-bg-visual[data-bg-src]');
+        if (bg) {
+          bg.style.backgroundImage = `url('${bg.getAttribute('data-bg-src')}')`;
+          bg.removeAttribute('data-bg-src');
+        }
+      }, { once: true, passive: true });
+
       const activate = () => {
         const discName = card.getAttribute('data-discipline');
         this.setFilter(discName);
@@ -397,10 +432,13 @@ class PortfolioApp {
     const container = document.getElementById('selected-work-grid');
     if (!container) return;
 
-    const selectedProjects = PROJECTS.filter((p) => p.selected);
+    // Strict 4 Curated Projects in exact order (Zero numbering, clean editorial alignment)
+    const FEATURED_IDS = ['zesis', 'emysc', 'mkegg', 'arimm'];
+    const selectedProjects = FEATURED_IDS
+      .map((id) => PROJECTS.find((p) => p.id === id))
+      .filter(Boolean);
 
     container.innerHTML = selectedProjects.map((p, idx) => {
-      const itemNum = String(idx + 1).padStart(2, '0');
       const secPills = (p.secondaryCategories || []).map((c) => `<span class="pill-secondary">${c}</span>`).join('');
       const heroImg = p.heroImage || (p.images[0] ? p.images[0].src : '');
 
@@ -408,20 +446,17 @@ class PortfolioApp {
         <article class="editorial-project-row" data-project-id="${p.id}" data-category="${p.primaryCategory}">
           <div class="project-media-col">
             <div class="project-row-lead">
-              <div class="project-lead-num-title">
-                <span class="project-entry-index">${itemNum}</span>
-                <div class="project-heading-group">
-                  <h3 class="project-entry-title" data-open-project="${p.id}">${p.title}</h3>
-                  <div class="project-meta-strip">
-                    <span class="project-strip-cat">${p.primaryCategory}</span>
-                    <span class="project-strip-sep">&bull;</span>
-                    <span class="project-strip-year">${p.year}</span>
-                  </div>
+              <div class="project-heading-group">
+                <h3 class="project-entry-title" data-open-project="${p.id}">${p.title}</h3>
+                <div class="project-meta-strip">
+                  <span class="project-strip-cat">${p.primaryCategory}</span>
+                  <span class="project-strip-sep">&bull;</span>
+                  <span class="project-strip-year">${p.year}</span>
                 </div>
               </div>
             </div>
             <div class="project-visual-frame" data-open-project="${p.id}" data-category="${p.primaryCategory}" data-aspect="${p.aspect || 'wide'}" tabindex="0" role="button" aria-label="Open case study for ${p.title}">
-              <img src="${heroImg}" alt="${p.title} — ${p.subtitle}" loading="lazy" decoding="async" />
+              <img src="${heroImg}" alt="${p.title} — ${p.subtitle}" ${idx === 0 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"'} decoding="async" />
             </div>
           </div>
           <div class="project-info-col">
@@ -1012,8 +1047,8 @@ class PortfolioApp {
         <span class="tool-sep" aria-hidden="true">&bull;</span>
       `).join('');
 
-      // Three complete cycles per group ensure uninterrupted infinite coverage
-      const groupContent = renderCycle() + renderCycle() + renderCycle();
+      // Two complete cycles per group ensure seamless infinite coverage while keeping DOM lean
+      const groupContent = renderCycle() + renderCycle();
 
       return `
         <div class="tools-marquee-row ${rowClass}" data-row="${rowDef.number}" style="--marquee-duration: ${duration}s;" title="Hover to pause">
@@ -1341,7 +1376,7 @@ class PortfolioApp {
         deliverables: ["3D Visual Artwork", "Optimized WebGL Assets", "Material & Lighting Systems", "Spatial Product Renders", "Dimensional Form Studies"],
         tools: ["Blender", "Three.js", "glTF Pipeline"],
         projects: [
-          { id: "earth-3d", title: "EARTH 3D", category: "3D DESIGN", image: "assets/3d/EARTH3D.png" }
+          { id: "earth-3d", title: "EARTH 3D", category: "3D DESIGN", image: "assets/3d/EARTH3D.webp" }
         ]
       },
       {
@@ -1377,7 +1412,7 @@ class PortfolioApp {
         tools: ["Three.js", "WebGL", "Creative Code"],
         projects: [
           { id: "mus26", title: "MUS26", category: "EXPERIMENTAL MEDIA", image: "assets/projects/graphic/mus26/MUS26.jpeg" },
-          { id: "earth-3d", title: "EARTH 3D", category: "EXPERIMENTAL MEDIA", image: "assets/3d/EARTH3D.png" }
+          { id: "earth-3d", title: "EARTH 3D", category: "EXPERIMENTAL MEDIA", image: "assets/3d/EARTH3D.webp" }
         ]
       }
     ];
@@ -1388,15 +1423,37 @@ class PortfolioApp {
     let activeLayer = 0;
     let displayedImageSrc = '';
 
-    // 1. Preload all project images for zero-lag instantaneous transitions
-    SERVICE_ITEMS.forEach((s) => {
-      s.projects.forEach((p) => {
-        if (p.image) {
-          const img = new Image();
-          img.src = p.image;
-        }
+    // 1. Defer preloading project images until Section 07 (Services) approaches viewport
+    let servicesPreloaded = false;
+    const preloadServiceImages = () => {
+      if (servicesPreloaded) return;
+      servicesPreloaded = true;
+      SERVICE_ITEMS.forEach((s) => {
+        s.projects.forEach((p) => {
+          if (p.image) {
+            const img = new Image();
+            img.decoding = 'async';
+            img.src = p.image;
+          }
+        });
       });
-    });
+    };
+
+    const servicesSection = document.getElementById('services');
+    if ('IntersectionObserver' in window && servicesSection) {
+      const servicesObs = new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            preloadServiceImages();
+            servicesObs.disconnect();
+          }
+        });
+      }, { rootMargin: '300px 0px' });
+      servicesObs.observe(servicesSection);
+    }
+    if (listContainer) {
+      listContainer.addEventListener('pointerenter', preloadServiceImages, { once: true, passive: true });
+    }
 
     // 2. Render the 10 services in the left column with inline mobile drawers
     listContainer.innerHTML = SERVICE_ITEMS.map((s, idx) => {
@@ -2081,6 +2138,20 @@ class PortfolioApp {
     // Refresh magnetic interaction on pagination buttons
     if (this.interactivity && typeof this.interactivity.refreshMagnetic === 'function') {
       this.interactivity.refreshMagnetic();
+    }
+
+    // Intelligent idle-time prefetch of next project hero image for instant navigation
+    if ('requestIdleCallback' in window && nextProject) {
+      window.requestIdleCallback(() => {
+        const nextHero = nextProject.heroImage || (nextProject.images && nextProject.images[0] ? nextProject.images[0].src : '');
+        if (nextHero && !document.querySelector(`link[rel="prefetch"][href="${nextHero}"]`)) {
+          const prefetchLink = document.createElement('link');
+          prefetchLink.rel = 'prefetch';
+          prefetchLink.as = 'image';
+          prefetchLink.href = nextHero;
+          document.head.appendChild(prefetchLink);
+        }
+      }, { timeout: 2000 });
     }
   }
 

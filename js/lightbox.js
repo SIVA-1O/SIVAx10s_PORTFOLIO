@@ -173,6 +173,7 @@ export class Lightbox {
     const caption = typeof item === 'string' ? '' : (item.caption || item.alt || '');
 
     this.imgEl.style.opacity = '0.3';
+    this.imgEl.decoding = 'async';
     this.imgEl.src = src;
     this.imgEl.alt = caption || `Image ${this.currentIndex + 1}`;
 
@@ -188,5 +189,24 @@ export class Lightbox {
     const single = this.images.length <= 1;
     this.prevBtn.style.display = single ? 'none' : 'flex';
     this.nextBtn.style.display = single ? 'none' : 'flex';
+
+    this.prefetchSurrounding();
+  }
+
+  prefetchSurrounding() {
+    if (this.images.length <= 1) return;
+    const nextIdx = (this.currentIndex + 1) % this.images.length;
+    const prevIdx = (this.currentIndex - 1 + this.images.length) % this.images.length;
+    const nextItem = this.images[nextIdx];
+    const prevItem = this.images[prevIdx];
+    [nextItem, prevItem].forEach((item) => {
+      if (!item) return;
+      const s = typeof item === 'string' ? item : item.src;
+      if (s) {
+        const pre = new Image();
+        pre.decoding = 'async';
+        pre.src = s;
+      }
+    });
   }
 }

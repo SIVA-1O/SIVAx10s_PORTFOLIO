@@ -28,7 +28,7 @@ export const PORTFOLIO_INFO = {
     image: "assets/freelance/FREELANCE_HERO_PORTRAIT.jpg",
     imageAlt: "Sivasuriya — Multidisciplinary Visual Designer",
     imageCaption: "FREELANCE GRAPHIC DESIGNER / INDEPENDENT PRACTICE",
-    collateralImage: "assets/freelance/FREELANCE_IMAGE.png",
+    collateralImage: "assets/freelance/FREELANCE_IMAGE1.webp",
     collateralCaption: "STUDIO ARTIFACTS / FREELANCE GRAPHIC DESIGN COLLATERAL"
   }
 };
@@ -93,7 +93,7 @@ export const EXPERIENCES = [
       "3D Visual Experiments"
     ],
     tools: ["Blender", "Three.js", "glTF / WebGL", "Material Shaders"],
-    previewImage: "assets/3d/EARTH3D.png",
+    previewImage: "assets/3d/EARTH3D.webp",
     previewAlt: "3D Spatial Modeling & Interactive Render",
     previewCaption: "DIMENSIONAL FORM & SPATIAL RENDERING · EARTH 3D (2025)"
   },
@@ -349,7 +349,7 @@ export const SERVICES = [
     relatedProjects: [
       { id: "earth-3d", title: "EARTH 3D" }
     ],
-    previewImage: "assets/3d/EARTH3D.png",
+    previewImage: "assets/3d/EARTH3D.webp",
     previewAlt: "EARTH 3D Visual Showcase"
   },
   {
@@ -477,7 +477,7 @@ export const PROJECTS = [
     tools: ["Adobe Photoshop", "Adobe Illustrator", "Adobe After Effects", "Adobe InDesign"],
     heroImage: "assets/projects/graphic/mus26/MUS26.jpeg",
     tags: ["Typographic System", "Billboard", "Kinetic Posture", "Flyers", "Editorial Layout"],
-    selected: true,
+    selected: false,
     aspect: "wide",
     images: [
       { src: "assets/projects/graphic/mus26/MUS26.jpeg", caption: "MUS26 Master Panoramic Banner & Typographic Framework" },
@@ -543,7 +543,7 @@ export const PROJECTS = [
     tools: ["Adobe Illustrator", "Adobe Photoshop", "Adobe InDesign"],
     heroImage: "assets/projects/poster-print/tekzzo/TEKZZO_01.jpeg",
     tags: ["Exhibition Posters", "Screen Print", "Editorial Layout", "Typography"],
-    selected: true,
+    selected: false,
     aspect: "wide",
     images: [
       { src: "assets/projects/poster-print/tekzzo/TEKZZO_01.jpeg", caption: "TEKZZO Exhibition Poster 01 - Core Specimen" },
@@ -659,7 +659,7 @@ export const PROJECTS = [
     tools: ["Figma", "React", "Adobe Illustrator"],
     heroImage: "assets/projects/ui/calott/CALOTT (5).jpeg",
     tags: ["Web Interface", "Design System", "Dashboard", "UX Flow"],
-    selected: true,
+    selected: false,
     aspect: "wide",
     isUIUX: true,
     uiuxSections: {
@@ -725,7 +725,7 @@ export const PROJECTS = [
     modelPath: "assets/3d/earth.glb",
     sourceBlend: "assets/3d/Earth.blend",
     tags: ["3D Modeling", "Planetary Environment", "Interactive Orbit", "Shader Materials", "Real-Time WebGL"],
-    selected: true,
+    selected: false,
     is3D: true,
     aspect: "wide",
     images: [
@@ -759,7 +759,7 @@ export const PROJECTS = [
     tools: ["Adobe Illustrator", "Adobe Photoshop", "Canva", "Adobe Lightroom"],
     heroImage: "assets/projects/graphic/stdeed/Stdeed.jpeg",
     tags: ["Apparel Identity", "Streetwear Graphics", "Billboard", "Tag System"],
-    selected: true,
+    selected: false,
     aspect: "wide",
     images: [
       { src: "assets/projects/graphic/stdeed/Stdeed.jpeg", caption: "STDEED Master Graphic Specimen" },
@@ -784,7 +784,7 @@ export const PROJECTS = [
     tools: ["Figma", "Adobe Photoshop", "Adobe Illustrator", "Midjourney"],
     heroImage: "assets/projects/digital/atllis/ATLLIS (1).jpeg",
     tags: ["Digital Campaign", "Visual Systems", "Future Interface", "Creative Direction"],
-    selected: true,
+    selected: false,
     aspect: "wide",
     images: [
       { src: "assets/projects/digital/atllis/ATLLIS (1).jpeg", caption: "ATLLIS Core Screen Composition 01" },

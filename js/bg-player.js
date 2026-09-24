@@ -39,6 +39,9 @@ export class MotionBackgroundPlayer {
     this.video.loop = true;
     this.video.autoplay = true;
     this.video.preload = 'auto';
+    if (!this.video.poster) {
+      this.video.poster = 'assets/background/poster.webp';
+    }
 
     const currentSource = this.video.querySelector('source');
     if (!this.video.src && !currentSource) {
