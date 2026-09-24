@@ -721,7 +721,7 @@ export const PROJECTS = [
     year: "2025",
     description: "A real-time, interactive 3D planetary environment rendering atmospheric scattering, dynamic cloud layers, and realistic solar illumination using Three.js and WebGL. Converted from the master Blender scene while preserving the original source file.",
     tools: ["Blender", "Three.js", "WebGL", "GLTFLoader", "OrbitControls"],
-    heroImage: "assets/3d/EARTH3D.png",
+    heroImage: "assets/3d/EARTH3D.webp",
     modelPath: "assets/3d/earth.glb",
     sourceBlend: "assets/3d/Earth.blend",
     tags: ["3D Modeling", "Planetary Environment", "Interactive Orbit", "Shader Materials", "Real-Time WebGL"],
@@ -729,7 +729,7 @@ export const PROJECTS = [
     is3D: true,
     aspect: "wide",
     images: [
-      { src: "assets/3d/EARTH3D.png", caption: "EARTH 3D Planetary Environment Key Visual" }
+      { src: "assets/3d/EARTH3D.webp", caption: "EARTH 3D Planetary Environment Key Visual" }
     ],
     applications: ["Real-Time 3D WebGL", "Interactive Model Exploration", "Digital Art Installations", "Atmospheric Visualization"],
     caseStudyDossier: {

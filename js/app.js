@@ -470,7 +470,29 @@ class PortfolioApp {
         });
       });
 
-      this.renderFilteredArchiveGrid();
+      // Defer initial archive grid rendering until Section 04 approaches viewport
+      const archiveSection = document.getElementById('archive');
+      let archiveGridRendered = false;
+      const loadArchiveGrid = () => {
+        if (archiveGridRendered) return;
+        archiveGridRendered = true;
+        this.renderFilteredArchiveGrid();
+      };
+      this.ensureArchiveGrid = loadArchiveGrid;
+
+      if ('IntersectionObserver' in window && archiveSection) {
+        const obs = new IntersectionObserver((entries) => {
+          entries.forEach(e => {
+            if (e.isIntersecting) {
+              loadArchiveGrid();
+              obs.disconnect();
+            }
+          });
+        }, { rootMargin: '600px 0px' });
+        obs.observe(archiveSection);
+      } else {
+        setTimeout(loadArchiveGrid, 2500);
+      }
     }
   }
 

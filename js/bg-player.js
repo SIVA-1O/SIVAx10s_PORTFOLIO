@@ -5,11 +5,11 @@
  * 
  * Optimized Startup & Memory Strategy:
  * - Frame 00001 preloaded & displayed first for instant first visual paint
- * - Small initial nearby lookahead (4–6 frames) with controlled concurrency
- * - Animation starts as soon as ~3 frames arrive, remaining frames progressively stream
- * - Strict concurrency cap (2–3 simultaneous loads) prevents network/decode saturation
+ * - Small initial nearby lookahead (4–6 frames)
+ * - Concurrency tuned for fast progressive streaming
+ * - Animation advances strictly when the next frame is ready (zero skipping, zero desync)
  * - Direct WebP utilization (all 300 frames exist as ~60KB WebP) without redundant PNG 404s
- * - Conservative rolling memory buffer around current frame prevents memory buildup while ensuring zero stutter
+ * - Rolling memory buffer around current frame prevents memory buildup while ensuring zero stutter
  */
 
 export class MotionBackgroundPlayer {
@@ -45,12 +45,12 @@ export class MotionBackgroundPlayer {
     this.prefersReducedMotion = false;
 
     // Controlled progressive streaming & conservative rolling buffer
-    this.maxConcurrentLoads = isMobile ? 2 : 3; // Keep concurrency low to prevent network & CPU spikes
-    this.initialLookahead = 5; // Load only 4-6 nearby frames initially (indices 1 to 5)
-    this.lookaheadBufferSize = isMobile ? 12 : 18; // Rolling lookahead window during playback
-    this.lookbackBufferSize = isMobile ? 18 : 28; // Rolling lookback window behind playback
+    this.maxConcurrentLoads = isMobile ? 4 : 6; // Standard HTTP/2 browser concurrency for streaming
+    this.initialLookahead = 6; // Load 6 nearby frames initially (indices 1 to 6)
+    this.lookaheadBufferSize = isMobile ? 18 : 28; // Rolling lookahead window during playback
+    this.lookbackBufferSize = isMobile ? 20 : 30; // Rolling lookback window behind playback
     this.minFramesToStart = 3; // Start motion as soon as 3 frames are ready
-    this.maxRetainedFrames = isMobile ? 35 : 55; // Conservative memory ceiling: flat RAM, zero stutter
+    this.maxRetainedFrames = isMobile ? 45 : 70; // Sensible memory ceiling: flat RAM, zero stutter
 
     this.frameObservers = [];
     this.init();
@@ -153,41 +153,29 @@ export class MotionBackgroundPlayer {
         this.startStreaming();
       };
 
-      if (img.decode) {
-        img.decode().then(onLoad).catch(() => {
-          if (ext === 'webp') {
-            tryLoad('png');
-          } else {
-            img.onload = onLoad;
-            img.onerror = () => { };
-          }
-        });
-      } else {
-        img.onload = onLoad;
-        img.onerror = () => {
-          if (ext === 'webp') {
-            tryLoad('png');
-          }
-        };
-      }
+      img.onload = () => {
+        if (img.decode) {
+          img.decode().then(onLoad).catch(onLoad);
+        } else {
+          onLoad();
+        }
+      };
+
+      img.onerror = () => {
+        if (ext === 'webp') {
+          tryLoad('png');
+        }
+      };
     };
 
     tryLoad('webp');
   }
 
   /**
-   * Start streaming nearby frames progressively with low initial lookahead
+   * Start streaming nearby frames progressively with initial lookahead
    */
   startStreaming() {
-    // Start by queueing the small initial batch (frames 1..5) with concurrency control
     this.pumpQueue(this.initialLookahead);
-
-    // Fallback timer: start animation within 180ms if frame 0 is ready
-    setTimeout(() => {
-      if (!this.isPlaying && !this.prefersReducedMotion && this.loadedFrames.size >= 1) {
-        this.start();
-      }
-    }, 180);
   }
 
   /**
@@ -206,7 +194,7 @@ export class MotionBackgroundPlayer {
 
       if (!this.frames[targetIdx] && !this.loadingFrames.has(targetIdx)) {
         this.queueLoad(targetIdx, () => {
-          // If enough frames loaded, start animation immediately
+          // If enough frames loaded, start animation
           if (!this.isPlaying && !this.prefersReducedMotion && this.loadedFrames.size >= this.minFramesToStart) {
             this.start();
           }
@@ -242,7 +230,15 @@ export class MotionBackgroundPlayer {
       if (onComplete) onComplete();
     };
 
-    const tryFallbackPng = () => {
+    img.onload = () => {
+      if (img.decode) {
+        img.decode().then(finish).catch(finish);
+      } else {
+        finish();
+      }
+    };
+
+    img.onerror = () => {
       if (ext === 'webp') {
         const fallbackImg = new Image();
         fallbackImg.decoding = 'async';
@@ -264,13 +260,6 @@ export class MotionBackgroundPlayer {
         if (onComplete) onComplete();
       }
     };
-
-    if (img.decode) {
-      img.decode().then(finish).catch(tryFallbackPng);
-    } else {
-      img.onload = finish;
-      img.onerror = tryFallbackPng;
-    }
   }
 
   /**
@@ -377,12 +366,13 @@ export class MotionBackgroundPlayer {
     if (elapsed >= this.frameDuration) {
       this.lastRenderTime = timestamp - (elapsed % this.frameDuration);
 
-      // Advance frame index
-      this.currentIndex = (this.currentIndex + 1) % this.totalFrames;
+      // Only advance frame index if the next frame is loaded and complete
+      const nextIndex = (this.currentIndex + 1) % this.totalFrames;
+      const nextImg = this.frames[nextIndex];
 
-      const currentImg = this.frames[this.currentIndex];
-      if (currentImg && currentImg.complete && currentImg.naturalWidth > 0) {
-        this.drawFrame(currentImg);
+      if (nextImg && nextImg.complete && nextImg.naturalWidth > 0) {
+        this.currentIndex = nextIndex;
+        this.drawFrame(nextImg);
       }
 
       // Maintain sensible memory footprint and stream upcoming frames
