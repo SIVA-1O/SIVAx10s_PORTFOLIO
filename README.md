@@ -231,7 +231,7 @@ The portfolio also functions as an evolving archive of:
 🧩 Modular JavaScript
 🎨 Custom visual systems
 
-No heavy application framework is required.
+No Heavy application framework is required.
 
 ---
 
