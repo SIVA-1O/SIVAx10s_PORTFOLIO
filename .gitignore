@@ -8,7 +8,7 @@ ehthumbs.db
 Thumbs.db
 Desktop.ini
 
-# Editor & IDE Directories
+# Editor & IDE DirectorieS
 .vscode/
 .idea/
 *.sublime-project
