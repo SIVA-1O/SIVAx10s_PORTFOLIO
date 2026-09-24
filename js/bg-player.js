@@ -1,7 +1,15 @@
 /**
- * SIVASURIYA PORTFOLIO - MOTIOn BACKGROUND ENGINE
- * High-performance 300 frame animation canvas system
+ * SIVASURIYA PORTFOLIO - MOTION BACKGROUND ENGINE
+ * High-performance 300 frame animation canvas system.
  * Native requestAnimationFrame, progressive streaming, cover scaling, zero flash.
+ * 
+ * Optimized Startup & Memory Strategy:
+ * - Frame 00001 preloaded & displayed first for instant first visual paint
+ * - Small initial nearby lookahead (4–6 frames) with controlled concurrency
+ * - Animation starts as soon as ~3 frames arrive, remaining frames progressively stream
+ * - Strict concurrency cap (2–3 simultaneous loads) prevents network/decode saturation
+ * - Direct WebP utilization (all 300 frames exist as ~60KB WebP) without redundant PNG 404s
+ * - Conservative rolling memory buffer around current frame prevents memory buildup while ensuring zero stutter
  */
 
 export class MotionBackgroundPlayer {
@@ -15,30 +23,34 @@ export class MotionBackgroundPlayer {
 
     this.ctx = this.canvas.getContext('2d');
     this.totalFrames = 300;
-    
+
     // Performance tuning: 30 FPS on desktop, 20 FPS on mobile / touch devices
     const isMobile = window.innerWidth < 768 || (navigator.maxTouchPoints && navigator.maxTouchPoints > 1);
+    this.isMobile = isMobile;
     this.targetFPS = isMobile ? 20 : 30;
     this.frameDuration = 1000 / this.targetFPS;
 
     this.frames = new Array(this.totalFrames).fill(null);
     this.loadedFrames = new Set();
+    this.loadingFrames = new Set();
     this.currentIndex = 0;
     this.lastRenderTime = 0;
     this.isPlaying = false;
     this.animId = null;
     this.lastDrawnImage = null;
-    this.frameExt = 'webp'; // Default to fast WebP, fallback to PNG
+    this.frameExt = 'webp'; // Primary high-efficiency format
 
     this.nativeWidth = 1280;
     this.nativeHeight = 720;
-    this.prefersReducedMotion = false; // Core portfolio brand signature; always active
+    this.prefersReducedMotion = false;
 
-    this.batchSize = 6;
-    this.nextLoadIndex = 0;
-    this.activeLoads = 0;
-    this.maxConcurrentLoads = 6;
-    this.windowBufferSize = isMobile ? 20 : 35; // Controlled lookahead buffer to conserve RAM
+    // Controlled progressive streaming & conservative rolling buffer
+    this.maxConcurrentLoads = isMobile ? 2 : 3; // Keep concurrency low to prevent network & CPU spikes
+    this.initialLookahead = 5; // Load only 4-6 nearby frames initially (indices 1 to 5)
+    this.lookaheadBufferSize = isMobile ? 12 : 18; // Rolling lookahead window during playback
+    this.lookbackBufferSize = isMobile ? 18 : 28; // Rolling lookback window behind playback
+    this.minFramesToStart = 3; // Start motion as soon as 3 frames are ready
+    this.maxRetainedFrames = isMobile ? 35 : 55; // Conservative memory ceiling: flat RAM, zero stutter
 
     this.frameObservers = [];
     this.init();
@@ -54,7 +66,7 @@ export class MotionBackgroundPlayer {
     this.resizeCanvas();
     window.addEventListener('resize', () => this.resizeCanvas(), { passive: true });
     window.addEventListener('orientationchange', () => setTimeout(() => this.resizeCanvas(), 100), { passive: true });
-    
+
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => this.resizeCanvas(), { once: true });
     }
@@ -82,7 +94,7 @@ export class MotionBackgroundPlayer {
       });
     }
 
-    // Step 1: Preload frame 0 immediately for zero-flash initial render
+    // Step 1: Preload frame 0 immediately for instant zero-flash initial render
     this.preloadInitialFrame();
   }
 
@@ -90,6 +102,7 @@ export class MotionBackgroundPlayer {
     window.motionBgDebug = {
       getCurrentIndex: () => this.currentIndex,
       getLoadedCount: () => this.loadedFrames.size,
+      getLoadingCount: () => this.loadingFrames.size,
       isPlaying: () => this.isPlaying,
       getFPS: () => this.targetFPS,
       getCanvasSize: () => ({ width: this.canvas.width, height: this.canvas.height }),
@@ -119,17 +132,25 @@ export class MotionBackgroundPlayer {
     }
   }
 
+  /**
+   * Load frame 00001 first. Once decoded, render immediately so the hero
+   * and background are visually ready with zero flash and zero wait.
+   */
   preloadInitialFrame() {
     const img = new Image();
+    img.decoding = 'async';
+
     const tryLoad = (ext) => {
       img.src = this.getFrameUrl(0, ext);
+
       const onLoad = () => {
         this.frameExt = ext;
         this.frames[0] = img;
         this.loadedFrames.add(0);
         this.drawFrame(img);
+
+        // Step 2: Once frame 00001 is displayed, progressively buffer next few frames
         this.startStreaming();
-        this.start();
       };
 
       if (img.decode) {
@@ -138,6 +159,7 @@ export class MotionBackgroundPlayer {
             tryLoad('png');
           } else {
             img.onload = onLoad;
+            img.onerror = () => { };
           }
         });
       } else {
@@ -153,43 +175,44 @@ export class MotionBackgroundPlayer {
     tryLoad('webp');
   }
 
+  /**
+   * Start streaming nearby frames progressively with low initial lookahead
+   */
   startStreaming() {
-    // Preload an initial buffer of frames before playing
-    this.loadBatch(() => {
-      // Start motion as soon as initial frames arrive for instant responsiveness
-      if (this.loadedFrames.size >= 2 && !this.isPlaying && !this.prefersReducedMotion) {
-        this.start();
-      }
-      this.pumpQueue();
-    });
+    // Start by queueing the small initial batch (frames 1..5) with concurrency control
+    this.pumpQueue(this.initialLookahead);
 
-    // Fallback timer: ensure animation starts without stalling on slower networks
+    // Fallback timer: start animation within 180ms if frame 0 is ready
     setTimeout(() => {
       if (!this.isPlaying && !this.prefersReducedMotion && this.loadedFrames.size >= 1) {
         this.start();
       }
-    }, 150);
+    }, 180);
   }
 
-  loadBatch(onLoadedCallback) {
-    const initialBatchEnd = Math.min(this.windowBufferSize, this.totalFrames);
-    for (let i = 1; i < initialBatchEnd; i++) {
-      this.queueLoad(i, onLoadedCallback);
-    }
-    this.nextLoadIndex = initialBatchEnd;
-  }
+  /**
+   * Controlled lookahead queue pumping.
+   * Loads missing frames sequentially ahead of currentIndex up to lookahead window.
+   */
+  pumpQueue(customLookahead) {
+    const lookahead = customLookahead || this.lookaheadBufferSize;
 
-  pumpQueue() {
-    // Only queue up to current position + lookahead window to avoid loading all 300 frames into RAM
-    const targetEnd = Math.min(this.currentIndex + this.windowBufferSize, this.totalFrames);
-    if (this.nextLoadIndex < targetEnd && this.activeLoads < this.maxConcurrentLoads) {
-      const idx = this.nextLoadIndex++;
-      this.queueLoad(idx, () => this.pumpQueue());
-    }
+    for (let i = 1; i <= lookahead; i++) {
+      if (this.loadingFrames.size >= this.maxConcurrentLoads) {
+        break;
+      }
 
-    // Wrap around for seamless looping
-    if (this.currentIndex > this.totalFrames - this.windowBufferSize && this.nextLoadIndex >= this.totalFrames) {
-      this.nextLoadIndex = 0;
+      const targetIdx = (this.currentIndex + i) % this.totalFrames;
+
+      if (!this.frames[targetIdx] && !this.loadingFrames.has(targetIdx)) {
+        this.queueLoad(targetIdx, () => {
+          // If enough frames loaded, start animation immediately
+          if (!this.isPlaying && !this.prefersReducedMotion && this.loadedFrames.size >= this.minFramesToStart) {
+            this.start();
+          }
+          this.pumpQueue();
+        });
+      }
     }
   }
 
@@ -198,40 +221,88 @@ export class MotionBackgroundPlayer {
       if (onComplete) onComplete();
       return;
     }
-    this.activeLoads++;
+    if (this.loadingFrames.has(index)) {
+      return;
+    }
+    if (this.loadingFrames.size >= this.maxConcurrentLoads) {
+      return;
+    }
+
+    this.loadingFrames.add(index);
 
     const img = new Image();
+    img.decoding = 'async';
     const ext = this.frameExt || 'webp';
     img.src = this.getFrameUrl(index, ext);
 
     const finish = () => {
       this.frames[index] = img;
       this.loadedFrames.add(index);
-      this.activeLoads--;
+      this.loadingFrames.delete(index);
       if (onComplete) onComplete();
     };
 
+    const tryFallbackPng = () => {
+      if (ext === 'webp') {
+        const fallbackImg = new Image();
+        fallbackImg.decoding = 'async';
+        fallbackImg.src = this.getFrameUrl(index, 'png');
+
+        fallbackImg.onload = () => {
+          this.frames[index] = fallbackImg;
+          this.loadedFrames.add(index);
+          this.loadingFrames.delete(index);
+          if (onComplete) onComplete();
+        };
+
+        fallbackImg.onerror = () => {
+          this.loadingFrames.delete(index);
+          if (onComplete) onComplete();
+        };
+      } else {
+        this.loadingFrames.delete(index);
+        if (onComplete) onComplete();
+      }
+    };
+
     if (img.decode) {
-      img.decode().then(finish).catch(() => {
-        if (ext === 'webp') {
-          img.src = this.getFrameUrl(index, 'png');
-          img.onload = finish;
-          img.onerror = finish;
-        } else {
-          finish();
-        }
-      });
+      img.decode().then(finish).catch(tryFallbackPng);
     } else {
       img.onload = finish;
-      img.onerror = () => {
-        if (ext === 'webp') {
-          img.src = this.getFrameUrl(index, 'png');
-          img.onload = finish;
-          img.onerror = finish;
-        } else {
-          finish();
+      img.onerror = tryFallbackPng;
+    }
+  }
+
+  /**
+   * Conservative rolling buffer memory management:
+   * Keeps frames in active lookahead & lookback window to prevent RAM accumulation,
+   * without aggressive unloading that could cause stuttering or repeated downloads.
+   */
+  manageMemory() {
+    if (this.loadedFrames.size <= this.maxRetainedFrames) {
+      return;
+    }
+
+    const lookback = this.lookbackBufferSize;
+    const lookahead = this.lookaheadBufferSize + 4;
+
+    for (const idx of this.loadedFrames) {
+      // Always keep frame 0 as safe visual reference
+      if (idx === 0) continue;
+
+      // Calculate cyclic distance from currentIndex
+      const distForward = (idx - this.currentIndex + this.totalFrames) % this.totalFrames;
+      const distBackward = (this.currentIndex - idx + this.totalFrames) % this.totalFrames;
+
+      // Evict if outside active lookahead/lookback corridor
+      if (distForward > lookahead && distBackward > lookback) {
+        this.frames[idx] = null;
+        this.loadedFrames.delete(idx);
+
+        if (this.loadedFrames.size <= this.maxRetainedFrames) {
+          break;
         }
-      };
+      }
     }
   }
 
@@ -314,7 +385,8 @@ export class MotionBackgroundPlayer {
         this.drawFrame(currentImg);
       }
 
-      // Memory-conscious lookahead queue pumping
+      // Maintain sensible memory footprint and stream upcoming frames
+      this.manageMemory();
       this.pumpQueue();
     }
 

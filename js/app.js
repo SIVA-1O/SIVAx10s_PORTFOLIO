@@ -5,7 +5,6 @@
 
 import { PORTFOLIO_INFO, DISCIPLINES, SERVICES, PROJECTS, TOOL_CATEGORIES, TOOL_ARCHIVE_ROWS, EXPERIENCES } from './data.js';
 import { MotionBackgroundPlayer } from './bg-player.js?v=2.3';
-import { ThreeViewer } from './three-viewer.js';
 import { Lightbox } from './lightbox.js';
 
 // SVG Icon Library for Tools & UI (24x24 viewBox, crisp inline rendering)
@@ -340,7 +339,7 @@ class PortfolioApp {
         <article class="editorial-project-row" data-project-id="${p.id}" data-category="${p.primaryCategory}">
           <div class="project-media-col">
             <div class="project-visual-frame" data-open-project="${p.id}" data-category="${p.primaryCategory}" data-aspect="${p.aspect || 'wide'}">
-              <img src="${heroImg}" alt="${p.title} — ${p.subtitle}" loading="lazy" />
+              <img src="${heroImg}" alt="${p.title} — ${p.subtitle}" loading="lazy" decoding="async" />
             </div>
           </div>
           <div class="project-info-col">
@@ -502,7 +501,7 @@ class PortfolioApp {
       return `
         <article class="archive-card" data-open-project="${p.id}" data-category="${p.primaryCategory}">
           <div class="archive-card-thumb" data-category="${p.primaryCategory}">
-            <img src="${heroImg}" alt="${p.title}" loading="lazy" />
+            <img src="${heroImg}" alt="${p.title}" loading="lazy" decoding="async" />
           </div>
           <div class="archive-card-body">
             <div class="archive-card-meta">
@@ -528,23 +527,76 @@ class PortfolioApp {
 
   /* ------------------------------------------------------------------------
      THREE.JS 3D SHOWCASE (SECTION 03 — WORLD / GLOBAL CREATIVE NETWORK)
+     Deferred loading: only loads Three.js & earth.glb when approaching viewport
      ------------------------------------------------------------------------ */
   initThreeViewer() {
+    const section = document.getElementById('3d-model');
     const viewport = document.getElementById('three-viewport');
     if (!viewport) return;
-    this.threeViewer = new ThreeViewer('three-viewport', 'assets/3d/earth.glb');
+
+    let isLoadingThree = false;
+    let pendingDiscipline = null;
+
+    const loadThree = async () => {
+      if (this.threeViewer || isLoadingThree) return;
+      isLoadingThree = true;
+
+      try {
+        const { ThreeViewer } = await import('./three-viewer.js');
+        this.threeViewer = new ThreeViewer('three-viewport', 'assets/3d/earth.glb');
+        if (pendingDiscipline && this.threeViewer) {
+          this.threeViewer.filterByDiscipline(pendingDiscipline);
+          pendingDiscipline = null;
+        }
+      } catch (err) {
+        console.error('Three.js viewer deferred initialization failed:', err);
+      } finally {
+        isLoadingThree = false;
+      }
+    };
+
+    this.loadThreeViewer = loadThree;
+
+    // If page is opened directly at #3d-model or deep linked, load immediately
+    if (window.location.hash === '#3d-model') {
+      loadThree();
+    } else if ('IntersectionObserver' in window && section) {
+      // Defer loading until Section 03 approaches the viewport (600px rootMargin)
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            loadThree();
+            observer.disconnect();
+          }
+        });
+      }, { rootMargin: '600px 0px' });
+
+      observer.observe(section);
+    } else {
+      // Fallback: load after window load when main thread is idle
+      window.addEventListener('load', () => {
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(() => loadThree(), { timeout: 3000 });
+        } else {
+          setTimeout(loadThree, 1500);
+        }
+      }, { once: true });
+    }
 
     // Creative Discipline Filter Bar
     const filterBar = document.getElementById('world-discipline-filters');
     if (filterBar) {
       const filterBtns = filterBar.querySelectorAll('.world-filter-btn');
       filterBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
           filterBtns.forEach(b => b.classList.remove('is-active'));
           btn.classList.add('is-active');
           const discipline = btn.getAttribute('data-discipline');
           if (this.threeViewer) {
             this.threeViewer.filterByDiscipline(discipline);
+          } else {
+            pendingDiscipline = discipline;
+            loadThree();
           }
           const hint = document.getElementById('world-interaction-hint');
           if (hint) hint.classList.add('is-faded');
@@ -1569,9 +1621,10 @@ class PortfolioApp {
 
     // If 3D project, instantiate viewer in modal
     if (project.is3D) {
-      setTimeout(() => {
+      setTimeout(async () => {
         const modalViewport = document.getElementById('modal-three-viewport');
         if (modalViewport) {
+          const { ThreeViewer } = await import('./three-viewer.js');
           new ThreeViewer('modal-three-viewport', project.modelPath);
         }
       }, 100);
@@ -1869,6 +1922,9 @@ class PortfolioApp {
       anchor.addEventListener('click', (e) => {
         const href = anchor.getAttribute('href');
         if (!href || href === '#') return;
+        if (href === '#3d-model' && this.loadThreeViewer) {
+          this.loadThreeViewer();
+        }
         if (href === '#hero') {
           e.preventDefault();
           window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1977,18 +2033,25 @@ class PortfolioApp {
   /* ------------------------------------------------------------------------
      WEBSITE AUDIO SOUND ENGINE (sound.mp3)
      Subtle ambient audio loop with toggle control & state persistence
+     Deferred initialization: Audio instance only created upon user interaction
      ------------------------------------------------------------------------ */
   setupAudioSound() {
     const soundToggle = document.getElementById('sound-toggle');
     const soundLabel = document.getElementById('sound-toggle-label');
     if (!soundToggle) return;
 
-    // Single managed Audio instance using canonical relative path
+    // Deferred Audio instance - instantiated only when user plays sound
     const audioPath = 'assets/audio/sound.mp3';
-    this.bgAudio = new Audio(audioPath);
-    this.bgAudio.loop = true;
-    this.bgAudio.volume = 0.25; // 25% subtle ambient volume
-    this.bgAudio.preload = 'none';
+    this.bgAudio = null;
+
+    const getAudio = () => {
+      if (!this.bgAudio) {
+        this.bgAudio = new Audio(audioPath);
+        this.bgAudio.loop = true;
+        this.bgAudio.volume = 0.25; // 25% subtle ambient volume
+      }
+      return this.bgAudio;
+    };
 
     // Sound state: 'on' | 'off'
     let soundPref = localStorage.getItem('sivasuriya-sound-state');
@@ -2013,7 +2076,8 @@ class PortfolioApp {
 
     const playAudio = async () => {
       try {
-        await this.bgAudio.play();
+        const audio = getAudio();
+        await audio.play();
         updateUI(true);
         localStorage.setItem('sivasuriya-sound-state', 'on');
       } catch (err) {
@@ -2023,7 +2087,9 @@ class PortfolioApp {
     };
 
     const pauseAudio = () => {
-      this.bgAudio.pause();
+      if (this.bgAudio) {
+        this.bgAudio.pause();
+      }
       updateUI(false);
       localStorage.setItem('sivasuriya-sound-state', 'off');
     };
@@ -2069,12 +2135,12 @@ class PortfolioApp {
     // Page visibility management: pause when backgrounded, resume when active if enabled
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
-        if (isPlaying) {
+        if (isPlaying && this.bgAudio) {
           this.bgAudio.pause();
         }
       } else {
         const currentPref = localStorage.getItem('sivasuriya-sound-state');
-        if (currentPref === 'on' && isPlaying) {
+        if (currentPref === 'on' && isPlaying && this.bgAudio) {
           this.bgAudio.play().catch(() => { });
         }
       }
