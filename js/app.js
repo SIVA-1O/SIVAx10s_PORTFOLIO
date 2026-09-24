@@ -120,6 +120,9 @@ class PortfolioApp {
 
     // 7. High-Impact Restrained Interactivity Engine
     this.interactivity = new InteractivityEngine();
+
+    // 8. Editorial Section Entrance Choreography
+    this.setupSectionEntrance();
   }
 
   /* ------------------------------------------------------------------------
@@ -325,35 +328,62 @@ class PortfolioApp {
 
   /* ------------------------------------------------------------------------
      DISCIPLINES SECTION
+     Visual Matrix with Authentic Project References & Zero Touch Interruption
      ------------------------------------------------------------------------ */
   renderDisciplines() {
     const container = document.getElementById('disciplines-grid');
     if (!container) return;
 
-    container.innerHTML = DISCIPLINES.map((d) => `
-      <div class="discipline-card discipline-${d.number}" data-discipline="${d.name}">
-        <div class="discipline-card-header">
-          <span class="discipline-card-number">${d.number}</span>
-          <span class="discipline-card-kicker">${d.kicker}</span>
-        </div>
-        <div class="discipline-card-content">
-          <h3 class="discipline-card-title">${d.name}</h3>
-          <p class="discipline-card-desc">${d.description}</p>
-        </div>
-        <div class="discipline-card-detail">
-          <span>${d.detail}</span>
-        </div>
-      </div>
-    `).join('');
+    // Authentic visual mapping referencing existing project assets
+    const disciplineVisuals = {
+      'branding': 'assets/projects/branding/zesis/ZESIS (1).jpeg',
+      'graphic-design': 'assets/projects/graphic/mus26/MUS26.jpeg',
+      'poster-print': 'assets/projects/poster-print/emysc/EMYSC_01.jpeg',
+      'digital-design': 'assets/projects/digital/mkegg/MKEGG (1).jpeg',
+      'ui-ux': 'assets/projects/ui/arimm/ARIMM (1).jpeg',
+      'motion': 'assets/projects/digital/atllis/ATLLIS (1).jpeg',
+      '3d-design': 'assets/3d/EARTH3D.webp',
+      'image-making': 'assets/projects/poster-print/tekzzo/TEKZZO_01.jpeg',
+      'art-direction': 'assets/projects/digital/logeer/LOGEER (1).jpeg',
+      'experimental-media': 'assets/projects/graphic/stdeed/Stdeed.jpeg'
+    };
 
-    // Clicking a discipline card filters All Work and scrolls down smoothly
+    container.innerHTML = DISCIPLINES.map((d) => {
+      const visualSrc = disciplineVisuals[d.id] || '';
+      return `
+        <div class="discipline-card discipline-${d.number}" data-discipline="${d.name}" tabindex="0" role="button" aria-label="Explore ${d.name} projects in archive">
+          ${visualSrc ? `<div class="discipline-card-bg-visual" style="background-image: url('${visualSrc}');" aria-hidden="true"></div>` : ''}
+          <div class="discipline-card-header">
+            <span class="discipline-card-number">${d.number}</span>
+            <span class="discipline-card-kicker">${d.kicker}</span>
+          </div>
+          <div class="discipline-card-content">
+            <h3 class="discipline-card-title">${d.name}</h3>
+            <p class="discipline-card-desc">${d.description}</p>
+          </div>
+          <div class="discipline-card-detail">
+            <span>${d.detail}</span>
+            <span class="discipline-card-view-link">VIEW INDEX ↗</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Clicking or pressing Enter/Space on a discipline card filters All Work and scrolls down smoothly
     container.querySelectorAll('.discipline-card').forEach((card) => {
-      card.addEventListener('click', () => {
+      const activate = () => {
         const discName = card.getAttribute('data-discipline');
         this.setFilter(discName);
         const target = document.getElementById('archive') || document.getElementById('all-work');
         if (target) {
           target.scrollIntoView({ behavior: 'smooth' });
+        }
+      };
+      card.addEventListener('click', activate);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          activate();
         }
       });
     });
@@ -361,6 +391,7 @@ class PortfolioApp {
 
   /* ------------------------------------------------------------------------
      SELECTED WORK (EDITORIAL CURATION)
+     Strict Hierarchy: Number / Title / Discipline & Year / Visual / View Project
      ------------------------------------------------------------------------ */
   renderSelectedWork() {
     const container = document.getElementById('selected-work-grid');
@@ -368,14 +399,28 @@ class PortfolioApp {
 
     const selectedProjects = PROJECTS.filter((p) => p.selected);
 
-    container.innerHTML = selectedProjects.map((p) => {
+    container.innerHTML = selectedProjects.map((p, idx) => {
+      const itemNum = String(idx + 1).padStart(2, '0');
       const secPills = (p.secondaryCategories || []).map((c) => `<span class="pill-secondary">${c}</span>`).join('');
       const heroImg = p.heroImage || (p.images[0] ? p.images[0].src : '');
 
       return `
         <article class="editorial-project-row" data-project-id="${p.id}" data-category="${p.primaryCategory}">
           <div class="project-media-col">
-            <div class="project-visual-frame" data-open-project="${p.id}" data-category="${p.primaryCategory}" data-aspect="${p.aspect || 'wide'}">
+            <div class="project-row-lead">
+              <div class="project-lead-num-title">
+                <span class="project-entry-index">${itemNum}</span>
+                <div class="project-heading-group">
+                  <h3 class="project-entry-title" data-open-project="${p.id}">${p.title}</h3>
+                  <div class="project-meta-strip">
+                    <span class="project-strip-cat">${p.primaryCategory}</span>
+                    <span class="project-strip-sep">&bull;</span>
+                    <span class="project-strip-year">${p.year}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="project-visual-frame" data-open-project="${p.id}" data-category="${p.primaryCategory}" data-aspect="${p.aspect || 'wide'}" tabindex="0" role="button" aria-label="Open case study for ${p.title}">
               <img src="${heroImg}" alt="${p.title} — ${p.subtitle}" loading="lazy" decoding="async" />
             </div>
           </div>
@@ -384,16 +429,14 @@ class PortfolioApp {
               <span class="pill-category" data-category="${p.primaryCategory}">${p.primaryCategory}</span>
               ${secPills}
             </div>
-            <h3 class="project-entry-title" data-open-project="${p.id}">${p.title}</h3>
             <p class="project-entry-subtitle">${p.subtitle}</p>
             <p class="project-entry-desc">${p.description}</p>
-            <button type="button" class="project-action-link" data-open-project="${p.id}" aria-label="View case study for ${p.title}">
-              <span>VIEW PROJECT CASE STUDY</span>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square">
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
-            </button>
+            <div class="project-footer-action">
+              <button type="button" class="archive-card-action-btn project-editorial-btn" data-project-id="${p.id}" data-open-project="${p.id}" aria-label="View Project ${p.title}">
+                <span class="btn-label-text">VIEW PROJECT</span>
+                <span class="btn-arrow-icon" aria-hidden="true">↗</span>
+              </button>
+            </div>
           </div>
         </article>
       `;
@@ -405,7 +448,18 @@ class PortfolioApp {
         const pid = el.getAttribute('data-open-project');
         this.openProjectModal(pid);
       });
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          const pid = el.getAttribute('data-open-project');
+          this.openProjectModal(pid);
+        }
+      });
     });
+
+    if (this.interactivity && typeof this.interactivity.refreshCards === 'function') {
+      this.interactivity.refreshCards();
+    }
   }
 
   /* ------------------------------------------------------------------------
@@ -1849,6 +1903,15 @@ class PortfolioApp {
       `;
     }
 
+    this.currentModalProject = project;
+
+    const currentIndex = PROJECTS.findIndex((p) => p.id === project.id);
+    const prevProject = PROJECTS[(currentIndex - 1 + PROJECTS.length) % PROJECTS.length];
+    const nextProject = PROJECTS[(currentIndex + 1) % PROJECTS.length];
+    const currentNum = String(currentIndex + 1).padStart(2, '0');
+    const totalNum = String(PROJECTS.length).padStart(2, '0');
+    const heroVisual = project.heroImage || (project.images[0] ? project.images[0].src : '');
+
     content.innerHTML = `
       <div class="project-detail-hero">
         <div class="project-meta-pills" style="margin-bottom: 1.5rem;">
@@ -1860,29 +1923,57 @@ class PortfolioApp {
         <p class="section-subtitle-editorial" style="margin-top: 1rem;">${project.subtitle}</p>
       </div>
 
-      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: clamp(2rem, 4vw, 4rem); margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border-subtle);">
-        <div>
-          <h4 style="font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.75rem;">OVERVIEW & ARCHITECTURE</h4>
-          <p style="font-size: 1.1rem; line-height: 1.6; color: var(--text-primary); margin-bottom: 1.5rem;">${project.description}</p>
+      ${heroVisual ? `
+        <div class="modal-hero-visual-frame" data-lightbox-index="0" title="Click to inspect full resolution specimen" tabindex="0" role="button" aria-label="Inspect ${project.title} specimen in lightbox">
+          <img src="${heroVisual}" alt="${project.title} — Primary Specimen" loading="eager" decoding="async" />
+          <div class="modal-hero-visual-badge">
+            <span class="badge-text">FULL RESOLUTION SPECIMEN</span>
+            <span class="badge-icon">⊕</span>
+          </div>
+        </div>
+      ` : ''}
+
+      <div class="modal-editorial-specs-grid">
+        <div class="specs-grid-main">
+          <div class="specs-block">
+            <span class="specs-label">OVERVIEW &amp; ARCHITECTURE</span>
+            <p class="specs-body-lead">${project.description}</p>
+          </div>
           ${project.visualSystem ? `
-            <h4 style="font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">VISUAL SYSTEM</h4>
-            <p style="color: var(--text-secondary); line-height: 1.5; margin-bottom: 1.5rem;">${project.visualSystem}</p>
+            <div class="specs-block" style="margin-top: 1.5rem;">
+              <span class="specs-label">VISUAL SYSTEM</span>
+              <p class="specs-body-text">${project.visualSystem}</p>
+            </div>
           ` : ''}
           ${project.motionNote ? `
-            <div style="padding: 1rem 1.25rem; background: var(--surface-panel); border-left: 2px solid var(--text-primary); margin-top: 1rem;">
-              <p style="font-family: var(--font-mono); font-size: 0.82rem; letter-spacing: 0.08em; color: var(--text-primary);">${project.motionNote}</p>
+            <div class="specs-callout">
+              <span class="specs-label">MOTION ARCHITECTURE</span>
+              <p class="specs-callout-text">${project.motionNote}</p>
             </div>
           ` : ''}
         </div>
-        <div>
-          <div style="margin-bottom: 1.5rem;">
-            <h4 style="font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.65rem;">TOOLS APPLIED</h4>
-            <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">${toolTags}</div>
+        <div class="specs-grid-aside">
+          <div class="specs-aside-item">
+            <span class="specs-label">DISCIPLINE</span>
+            <div class="specs-pills-wrap">
+              <span class="pill-category">${project.primaryCategory}</span>
+              ${secTags}
+            </div>
           </div>
-          <div>
-            <h4 style="font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.65rem;">APPLICATIONS</h4>
-            <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">${appTags}</div>
+          <div class="specs-aside-item">
+            <span class="specs-label">ROLE</span>
+            <span class="specs-role-val">Visual Designer</span>
           </div>
+          <div class="specs-aside-item">
+            <span class="specs-label">TOOLS APPLIED</span>
+            <div class="specs-pills-wrap">${toolTags}</div>
+          </div>
+          ${appTags ? `
+            <div class="specs-aside-item">
+              <span class="specs-label">APPLICATIONS</span>
+              <div class="specs-pills-wrap">${appTags}</div>
+            </div>
+          ` : ''}
         </div>
       </div>
 
@@ -1918,13 +2009,38 @@ class PortfolioApp {
           </div>
         `;
       })()}
+
+      <!-- Bottom Pagination Bar: PREVIOUS ← / NEXT → -->
+      <nav class="modal-pagination-bar" aria-label="Project Case Study Navigation">
+        <button type="button" class="modal-pagination-btn modal-pagination-prev" data-nav-project="${prevProject.id}" aria-label="Previous project: ${prevProject.title}">
+          <span class="modal-pagination-kicker">PREVIOUS &larr;</span>
+          <span class="modal-pagination-title">${prevProject.title}</span>
+          <span class="modal-pagination-cat">${prevProject.primaryCategory}</span>
+        </button>
+        <div class="modal-pagination-indicator" aria-hidden="true">
+          <span class="modal-pagination-count">${currentNum} &sol; ${totalNum}</span>
+          <span class="modal-pagination-hint">&larr; ARROW KEYS &rarr;</span>
+        </div>
+        <button type="button" class="modal-pagination-btn modal-pagination-next" data-nav-project="${nextProject.id}" aria-label="Next project: ${nextProject.title}">
+          <span class="modal-pagination-kicker">NEXT &rarr;</span>
+          <span class="modal-pagination-title">${nextProject.title}</span>
+          <span class="modal-pagination-cat">${nextProject.primaryCategory}</span>
+        </button>
+      </nav>
     `;
 
     // Attach Lightbox event listeners to all clickable specimen cards
     content.querySelectorAll('[data-lightbox-index]').forEach((el) => {
-      el.addEventListener('click', () => {
+      const openLightbox = () => {
         const idx = parseInt(el.getAttribute('data-lightbox-index'), 10);
         this.lightbox.open(project.images, idx);
+      };
+      el.addEventListener('click', openLightbox);
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openLightbox();
+        }
       });
     });
 
@@ -1933,6 +2049,14 @@ class PortfolioApp {
       el.addEventListener('click', () => {
         const pid = el.getAttribute('data-open-project');
         this.openProjectModal(pid);
+      });
+    });
+
+    // Attach Previous/Next Project pagination triggers inside modal
+    content.querySelectorAll('[data-nav-project]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const navPid = btn.getAttribute('data-nav-project');
+        this.openProjectModal(navPid);
       });
     });
 
@@ -1953,6 +2077,19 @@ class PortfolioApp {
 
     modal.classList.add('is-active');
     document.body.style.overflow = 'hidden';
+
+    // Refresh magnetic interaction on pagination buttons
+    if (this.interactivity && typeof this.interactivity.refreshMagnetic === 'function') {
+      this.interactivity.refreshMagnetic();
+    }
+  }
+
+  navigateModalProject(direction) {
+    if (!this.currentModalProject) return;
+    const currentIndex = PROJECTS.findIndex((p) => p.id === this.currentModalProject.id);
+    if (currentIndex === -1) return;
+    const nextIndex = (currentIndex + direction + PROJECTS.length) % PROJECTS.length;
+    this.openProjectModal(PROJECTS[nextIndex].id);
   }
 
   closeProjectModal() {
@@ -2588,7 +2725,38 @@ class PortfolioApp {
       // If the guide modal is open, don't execute section shortcuts underneath
       if (isGuideOpen()) return;
 
-      // 5. Shortcut 'M' / 'm': Toggle existing sound system
+      // 5. Shortcut '/': Focus archive search input without typing '/'
+      if (e.key === '/') {
+        e.preventDefault();
+        const searchInput = document.getElementById('archive-search-input');
+        const archiveSec = document.getElementById('archive') || document.getElementById('all-work');
+        if (archiveSec) archiveSec.scrollIntoView({ behavior: 'smooth' });
+        if (searchInput) {
+          setTimeout(() => {
+            searchInput.focus();
+            searchInput.select();
+          }, 200);
+        }
+        return;
+      }
+
+      // 6. Modal Navigation: ArrowLeft / ArrowRight
+      const projectModal = document.getElementById('project-modal');
+      const isModalActive = projectModal && (projectModal.classList.contains('is-active') || projectModal.classList.contains('is-open'));
+      if (isModalActive && (!this.lightbox || !this.lightbox.isOpen)) {
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          this.navigateModalProject(-1);
+          return;
+        }
+        if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          this.navigateModalProject(1);
+          return;
+        }
+      }
+
+      // 7. Shortcut 'M' / 'm': Toggle existing sound system or menu
       if (e.key === 'm' || e.key === 'M') {
         e.preventDefault();
         const soundBtn = document.getElementById('sound-toggle');
@@ -2596,7 +2764,7 @@ class PortfolioApp {
         return;
       }
 
-      // 6. Section Navigation: 1..5
+      // 8. Editorial Section Navigation: 1..8
       if (e.key === '1') {
         e.preventDefault();
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2615,10 +2783,55 @@ class PortfolioApp {
         if (el) el.scrollIntoView({ behavior: 'smooth' });
       } else if (e.key === '5') {
         e.preventDefault();
+        const el = document.getElementById('archive') || document.getElementById('all-work');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      } else if (e.key === '6') {
+        e.preventDefault();
+        const el = document.getElementById('experience');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      } else if (e.key === '7') {
+        e.preventDefault();
+        const el = document.getElementById('services') || document.getElementById('tools');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      } else if (e.key === '8') {
+        e.preventDefault();
         const el = document.getElementById('contact');
         if (el) el.scrollIntoView({ behavior: 'smooth' });
       }
     });
+  }
+
+  /* ------------------------------------------------------------------------
+     SECTION ENTRANCE CHOREOGRAPHY
+     Subtle, restrained editorial reveal using IntersectionObserver
+     Strictly disabled / instant for prefers-reduced-motion
+     ------------------------------------------------------------------------ */
+  setupSectionEntrance() {
+    const isReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const targets = document.querySelectorAll(
+      '.section-header-editorial, .editorial-project-row, .discipline-card, .exp-card-redesign, .service-card, .tools-category-card'
+    );
+
+    if (isReducedMotion || !('IntersectionObserver' in window)) {
+      targets.forEach((el) => el.classList.add('is-inview'));
+      return;
+    }
+
+    targets.forEach((el) => el.classList.add('editorial-reveal-block'));
+
+    const entranceObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-inview');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, {
+      rootMargin: '0px 0px -40px 0px',
+      threshold: 0.08
+    });
+
+    targets.forEach((el) => entranceObserver.observe(el));
   }
 }
 

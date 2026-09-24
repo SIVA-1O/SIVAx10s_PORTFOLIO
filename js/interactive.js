@@ -49,7 +49,8 @@ export class InteractivityEngine {
       '.filter-pill-btn',
       '.nav-link',
       '.archive-toggle-btn',
-      '.archive-card-action-btn'
+      '.archive-card-action-btn',
+      '.modal-pagination-btn'
     ];
 
     const attachMagnetic = (el) => {
@@ -112,7 +113,8 @@ export class InteractivityEngine {
     const tiltSelectors = [
       '.archive-card',
       '.showcase-row',
-      '.discipline-card'
+      '.discipline-card',
+      '.editorial-project-row'
     ];
 
     const attachTilt = (card) => {

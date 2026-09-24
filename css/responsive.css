@@ -111,6 +111,53 @@ html, body {
     padding: 0.5rem;
   }
 
+  .project-lead-num-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+
+  .project-heading-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+
+  .project-editorial-btn,
+  .archive-card-action-btn {
+    min-height: 44px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .modal-hero-visual-frame {
+    max-height: 300px;
+    margin-top: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .modal-editorial-specs-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .modal-pagination-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    padding-top: 1.75rem;
+  }
+
+  .modal-pagination-btn {
+    min-width: 100%;
+    min-height: 48px;
+    padding: 0.85rem 1.15rem;
+  }
+
+  .modal-pagination-btn.modal-pagination-next {
+    align-items: flex-start;
+  }
+
   .hero-section {
     min-height: 100vh;
     min-height: 100svh;
@@ -531,6 +578,14 @@ html, body {
   .archive-list-tool-tag {
     font-size: 0.60rem;
     padding: 0.15rem 0.4rem;
+  }
+
+  .modal-hero-visual-frame {
+    max-height: 220px;
+  }
+
+  .modal-pagination-title {
+    font-size: 1rem;
   }
 
   .keyboard-guide-dialog {
