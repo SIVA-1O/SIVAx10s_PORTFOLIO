@@ -1,0 +1,11 @@
+# Cloudflare Workers Static Assets Ignore
+.git/
+.github/
+.gitignore
+.gitattributes
+.wrangler/
+README.md
+server.py
+wrangler.jsonc
+assets/3d/Earth.blend
+*.blend

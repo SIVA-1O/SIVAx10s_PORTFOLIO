@@ -723,7 +723,6 @@ export const PROJECTS = [
     tools: ["Blender", "Three.js", "WebGL", "GLTFLoader", "OrbitControls"],
     heroImage: "assets/3d/EARTH3D.webp",
     modelPath: "assets/3d/earth.glb",
-    sourceBlend: "assets/3d/Earth.blend",
     tags: ["3D Modeling", "Planetary Environment", "Interactive Orbit", "Shader Materials", "Real-Time WebGL"],
     selected: false,
     is3D: true,

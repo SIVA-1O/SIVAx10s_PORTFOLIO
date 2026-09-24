@@ -26,3 +26,5 @@ __pycache__/
 audit_paths.py
 *.log
 *.tmp
+*.blend
+.wrangler/
