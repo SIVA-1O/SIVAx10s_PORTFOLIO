@@ -1,5 +1,5 @@
 /**
- * SIVASURIYA PORTFOLIO - MOTION BACKGROUND ENGINE
+ * SIVASURIYA PORTFOLIO - MOTIOn BACKGROUND ENGINE
  * High-performance 300 frame animation canvas system
  * Native requestAnimationFrame, progressive streaming, cover scaling, zero flash.
  */
