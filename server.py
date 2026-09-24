@@ -5,7 +5,7 @@ import os
 
 PORT = 3000
 
-# Explicitly register all modern web MIME types
+# Explicitly register all modern web MIME typeS
 mimetypes.init()
 mimetypes.add_type('image/webp', '.webp')
 mimetypes.add_type('image/png', '.png')
