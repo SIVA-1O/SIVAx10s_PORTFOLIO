@@ -294,7 +294,7 @@ VISITORS // EXHIBITION AUDIT
 ────────────────────────────────────────────────────────────────────────────────
 ```
 
-## 12 — CONTACT & COLOPHON
+## 12 — CONTACT 
 
 ```text
 LET'S
