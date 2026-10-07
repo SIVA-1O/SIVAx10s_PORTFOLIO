@@ -32,7 +32,7 @@
     href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" />
 
   <!-- Stylesheets -->
-  <link rel="stylesheet" href="css/main.css?v=3.0" />
+  <link rel="stylesheet" href="css/main.css?v=3.2" />
   <link rel="stylesheet" href="css/components.css?v=3.0" />
   <link rel="stylesheet" href="css/responsive.css?v=3.0" />
 
@@ -53,8 +53,11 @@
   <!-- Razor-thin Editorial Scroll Reading Progress Indicator (Fixed 2px, #38bdf8) -->
   <div id="scroll-progress" class="scroll-progress-bar" aria-hidden="true"></div>
 
+  <!-- High-Performance Cinematic Background Poster Layer (Guaranteed Zero Play Button Fallback) -->
+  <div id="bg-poster" class="bg-poster" aria-hidden="true"></div>
+
   <!-- Motion Background Video (Native HTML5 MP4 Player) -->
-  <video id="bg-video" class="bg-video" src="assets/background/BACKGROUND.mp4" autoplay muted loop playsinline webkit-playsinline preload="auto" poster="assets/background/poster.webp" aria-hidden="true" tabindex="-1">
+  <video id="bg-video" class="bg-video" src="assets/background/BACKGROUND.mp4" autoplay muted loop playsinline webkit-playsinline preload="auto" aria-hidden="true" tabindex="-1">
     <source src="assets/background/BACKGROUND.mp4" type="video/mp4" />
   </video>
   <script>
@@ -65,7 +68,13 @@
         v.defaultMuted = true;
         var p = v.play();
         if (p !== undefined) {
-          p.catch(function () {});
+          p.then(function () {
+            v.classList.add('is-playing');
+          }).catch(function () {
+            // Autoplay blocked (e.g. iOS Low Power Mode).
+            // Instantly unrender the video element so Safari CANNOT paint the native play button!
+            v.style.display = 'none';
+          });
         }
       }
     })();
@@ -1228,7 +1237,7 @@
   </div>
 
   <!-- Main Application Script (ES Module) -->
-  <script type="module" src="js/app.js?v=3.1"></script>
+  <script type="module" src="js/app.js?v=3.2"></script>
 
 </body>
 

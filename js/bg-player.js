@@ -9,7 +9,7 @@
  * - Native HTML5 <video> element connected to assets/background/BACKGROUND.mp4
  * - Full autoplay compliance on iOS Safari: muted, defaultMuted, playsinline, webkit-playsinline
  * - Robust promise-based playback lifecycle with intelligent retry & load fallbacks
- * - Zero play buttons or overlay chrome under any circumstances
+ * - Zero play buttons or overlay chrome under any circumstances (including iOS Low Power Mode)
  * - Browser-native media pipeline (compositor thread, hardware H.264 decoding)
  * - Tab visibility management (pauses in background tab, resumes seamlessly)
  * - Accessibility: prefers-reduced-motion stops animation and shows stable frame
@@ -46,11 +46,8 @@ export class MotionBackgroundPlayer {
     this.video.preload = 'auto';
     this.video.setAttribute('preload', 'auto');
     this.video.removeAttribute('controls');
-
-    if (!this.video.getAttribute('poster')) {
-      this.video.poster = 'assets/background/poster.webp';
-      this.video.setAttribute('poster', 'assets/background/poster.webp');
-    }
+    // Ensure no native poster is set on video element to prevent Safari native play overlay
+    this.video.removeAttribute('poster');
 
     // Ensure direct src attribute is populated for immediate iOS WebKit pipeline binding
     const currentSource = this.video.querySelector('source');
@@ -107,19 +104,32 @@ export class MotionBackgroundPlayer {
     const motionMedia = window.matchMedia('(prefers-reduced-motion: reduce)');
     this.prefersReducedMotion = motionMedia.matches;
 
-    // Error handling: gracefully log issues without removing element or crashing
+    // Error handling: gracefully log issues without crashing
     this.video.addEventListener('error', (err) => {
       console.warn('[MotionBackground] Video notice:', err);
+      this.video.style.display = 'none';
+      this.video.classList.remove('is-playing');
       this.pauseSamplingLoop();
     });
 
     // Reset retries and clean up any fallback listeners when video begins active playback
     this.video.addEventListener('playing', () => {
+      this.video.style.display = 'block';
+      this.video.classList.add('is-playing');
       this.retryCount = 0;
       clearTimeout(this.retryTimer);
       this.removePassiveFallback();
       if (this.isSamplingActive) {
         this.resumeSamplingLoop();
+      }
+    });
+
+    // If paused outside active playing state and not due to tab hide, hide video element
+    // so that Safari's system play overlay button CANNOT be rendered over the screen
+    this.video.addEventListener('pause', () => {
+      if (!document.hidden && (!this.video.currentTime || this.video.currentTime === 0)) {
+        this.video.style.display = 'none';
+        this.video.classList.remove('is-playing');
       }
     });
 
@@ -141,6 +151,8 @@ export class MotionBackgroundPlayer {
       this.playVideoSafe();
     } else {
       this.video.pause();
+      this.video.style.display = 'none';
+      this.video.classList.remove('is-playing');
     }
 
     // Handle tab visibility changes (pause to save battery & GPU, resume seamlessly)
@@ -152,9 +164,6 @@ export class MotionBackgroundPlayer {
       } else {
         if (this.wasPlayingBeforeHide && !this.prefersReducedMotion) {
           this.playVideoSafe();
-          if (this.isSamplingActive) {
-            this.resumeSamplingLoop();
-          }
         }
       }
     });
@@ -181,12 +190,11 @@ export class MotionBackgroundPlayer {
         this.prefersReducedMotion = e.matches;
         if (this.prefersReducedMotion) {
           this.video.pause();
+          this.video.style.display = 'none';
+          this.video.classList.remove('is-playing');
           this.pauseSamplingLoop();
         } else {
           this.playVideoSafe();
-          if (this.isSamplingActive) {
-            this.resumeSamplingLoop();
-          }
         }
       });
     }
@@ -218,8 +226,10 @@ export class MotionBackgroundPlayer {
       this.video.setAttribute('webkit-playsinline', '');
     }
 
-    // If already actively playing, avoid redundant play invocations
+    // If already actively playing, ensure visible
     if (!this.video.paused && this.video.currentTime > 0) {
+      this.video.style.display = 'block';
+      this.video.classList.add('is-playing');
       return;
     }
 
@@ -233,9 +243,14 @@ export class MotionBackgroundPlayer {
       }
     }
 
+    // Briefly ensure display: block so browser media engine can process play command
+    this.video.style.display = 'block';
+
     const playPromise = this.video.play();
     if (playPromise !== undefined) {
       playPromise.then(() => {
+        this.video.style.display = 'block';
+        this.video.classList.add('is-playing');
         this.retryCount = 0;
         clearTimeout(this.retryTimer);
         this.removePassiveFallback();
@@ -243,30 +258,15 @@ export class MotionBackgroundPlayer {
           this.resumeSamplingLoop();
         }
       }).catch((err) => {
-        // Autoplay policy, system battery constraints, or gesture delay
-        console.warn('[MotionBackground] Autoplay note:', err?.name || err);
-        this.scheduleRetry();
+        // Autoplay blocked by iOS (e.g. Low Power Mode).
+        // CRITICAL: HIDE THE VIDEO ELEMENT IMMEDIATELY so Safari CANNOT render
+        // its native circular play button overlay over the hero section!
+        this.video.style.display = 'none';
+        this.video.classList.remove('is-playing');
+        console.warn('[MotionBackground] Autoplay note (handled gracefully):', err?.name || err);
+        this.attachPassiveFallback();
       });
     }
-  }
-
-  scheduleRetry() {
-    if (this.retryCount >= this.maxRetries) {
-      // Bounded retries reached. Attach a silent, passive touch/scroll handler
-      // so if iOS Safari is in Low Power Mode, the first swipe/touch seamlessly starts playback
-      // without ever displaying a play button.
-      this.attachPassiveFallback();
-      return;
-    }
-
-    this.retryCount++;
-    clearTimeout(this.retryTimer);
-    const delay = Math.min(300 * this.retryCount, 1200);
-    this.retryTimer = setTimeout(() => {
-      if (this.video && this.video.paused && !this.prefersReducedMotion) {
-        this.playVideoSafe();
-      }
-    }, delay);
   }
 
   attachPassiveFallback() {
@@ -275,9 +275,20 @@ export class MotionBackgroundPlayer {
 
     const triggerSilentPlayback = () => {
       if (this.video && this.video.paused && !this.prefersReducedMotion) {
-        this.playVideoSafe();
+        // Unhide on user touch gesture to start playback
+        this.video.style.display = 'block';
+        const p = this.video.play();
+        if (p !== undefined) {
+          p.then(() => {
+            this.video.style.display = 'block';
+            this.video.classList.add('is-playing');
+            this.removePassiveFallback();
+          }).catch(() => {
+            this.video.style.display = 'none';
+            this.video.classList.remove('is-playing');
+          });
+        }
       }
-      this.removePassiveFallback();
     };
 
     this._passiveHandler = triggerSilentPlayback;

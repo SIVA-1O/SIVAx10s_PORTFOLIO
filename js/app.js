@@ -4,7 +4,7 @@
  */
 
 import { PORTFOLIO_INFO, DISCIPLINES, SERVICES, PROJECTS, TOOL_CATEGORIES, TOOL_ARCHIVE_ROWS, EXPERIENCES } from './data.js';
-import { MotionBackgroundPlayer } from './bg-player.js?v=3.1';
+import { MotionBackgroundPlayer } from './bg-player.js?v=3.2';
 import { Lightbox } from './lightbox.js';
 import { InteractivityEngine } from './interactive.js?v=3.0';
 
