@@ -4,7 +4,7 @@
  */
 
 import { PORTFOLIO_INFO, DISCIPLINES, SERVICES, PROJECTS, TOOL_CATEGORIES, TOOL_ARCHIVE_ROWS, EXPERIENCES } from './data.js';
-import { MotionBackgroundPlayer } from './bg-player.js?v=3.0';
+import { MotionBackgroundPlayer } from './bg-player.js?v=3.1';
 import { Lightbox } from './lightbox.js';
 import { InteractivityEngine } from './interactive.js?v=3.0';
 
@@ -2907,7 +2907,11 @@ class PortfolioApp {
   }
 }
 
-// Bootstrap Application on DOM Ready
-document.addEventListener('DOMContentLoaded', () => {
+// Bootstrap Application on DOM Ready (robust against deferred ES module timing)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    window.portfolioApp = new PortfolioApp();
+  });
+} else {
   window.portfolioApp = new PortfolioApp();
-});
+}

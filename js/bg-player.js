@@ -3,17 +3,17 @@
  * 
  * Hardware-accelerated, native HTML5 video motion background system.
  * Zero manual frame downloads, zero decode queues, instant progressive startup.
+ * Specifically hardened for Mobile Safari / iPhone 11 & modern desktop browsers.
  * 
- * Performance & Architecture:
+ * Requirements & Architecture:
  * - Native HTML5 <video> element connected to assets/background/BACKGROUND.mp4
+ * - Full autoplay compliance on iOS Safari: muted, defaultMuted, playsinline, webkit-playsinline
+ * - Robust promise-based playback lifecycle with intelligent retry & load fallbacks
+ * - Zero play buttons or overlay chrome under any circumstances
  * - Browser-native media pipeline (compositor thread, hardware H.264 decoding)
- * - Autoplay, muted, loop, playsinline, pointer-events: none, object-fit: cover
- * - Zero JS CPU work during standard background playback
  * - Tab visibility management (pauses in background tab, resumes seamlessly)
  * - Accessibility: prefers-reduced-motion stops animation and shows stable frame
- * - Connect Button Texture: On-demand offscreen canvas sampling ONLY when the
- *   hero Connect CTA is visible in the viewport and active. Zero permanent loop.
- * - Error fallback: Graceful fallback to static portfolio background with clear diagnostic log.
+ * - Connect Button Texture: On-demand offscreen canvas sampling ONLY when active
  */
 
 export class MotionBackgroundPlayer {
@@ -32,19 +32,31 @@ export class MotionBackgroundPlayer {
       document.body.prepend(this.video);
     }
 
-    // 2. Strict media configuration for seamless silent background playback
+    // 2. Strict media configuration for seamless silent background playback on iPhone Safari
     this.video.muted = true;
     this.video.defaultMuted = true;
+    this.video.setAttribute('muted', '');
     this.video.playsInline = true;
+    this.video.setAttribute('playsinline', '');
+    this.video.setAttribute('webkit-playsinline', '');
     this.video.loop = true;
+    this.video.setAttribute('loop', '');
     this.video.autoplay = true;
+    this.video.setAttribute('autoplay', '');
     this.video.preload = 'auto';
-    if (!this.video.poster) {
+    this.video.setAttribute('preload', 'auto');
+    this.video.removeAttribute('controls');
+
+    if (!this.video.getAttribute('poster')) {
       this.video.poster = 'assets/background/poster.webp';
+      this.video.setAttribute('poster', 'assets/background/poster.webp');
     }
 
+    // Ensure direct src attribute is populated for immediate iOS WebKit pipeline binding
     const currentSource = this.video.querySelector('source');
-    if (!this.video.src && !currentSource) {
+    if (!this.video.src && currentSource && currentSource.src) {
+      this.video.src = currentSource.src;
+    } else if (!this.video.src) {
       this.video.src = 'assets/background/BACKGROUND.mp4';
     }
 
@@ -57,12 +69,19 @@ export class MotionBackgroundPlayer {
     this.samplingRafId = null;
     this.frameObservers = [];
 
+    // Playback resilience and retry management
+    this.retryCount = 0;
+    this.maxRetries = 4;
+    this.retryTimer = null;
+    this.hasCalledLoad = false;
+    this.passiveFallbackAttached = false;
+    this._passiveHandler = null;
+
     // 4. Reusable Offscreen Canvas for synchronized Connect CTA button texture
     this.offscreenCanvas = document.createElement('canvas');
     this.offscreenCanvas.width = 640;
     this.offscreenCanvas.height = 360;
     this.offscreenCtx = this.offscreenCanvas.getContext('2d', { willReadFrequently: false });
-    // Compatibility properties for observers expecting image-like dimensions
     Object.defineProperty(this.offscreenCanvas, 'naturalWidth', { get: () => this.offscreenCanvas.width });
     Object.defineProperty(this.offscreenCanvas, 'naturalHeight', { get: () => this.offscreenCanvas.height });
 
@@ -71,7 +90,7 @@ export class MotionBackgroundPlayer {
   }
 
   get isPlaying() {
-    return !!(this.video && !this.video.paused && !this.video.ended && this.video.readyState > 2);
+    return !!(this.video && !this.video.paused && !this.video.ended && this.video.readyState >= 2);
   }
 
   get currentIndex() {
@@ -88,11 +107,33 @@ export class MotionBackgroundPlayer {
     const motionMedia = window.matchMedia('(prefers-reduced-motion: reduce)');
     this.prefersReducedMotion = motionMedia.matches;
 
-    // Error handling: ensure graceful fallback if video fails to load
+    // Error handling: gracefully log issues without removing element or crashing
     this.video.addEventListener('error', (err) => {
-      console.warn('[MotionBackground] BACKGROUND.mp4 playback encountered an issue; maintaining static background presentation.', err);
-      this.video.style.display = 'none';
-      this.stopConnectSampling();
+      console.warn('[MotionBackground] Video notice:', err);
+      this.pauseSamplingLoop();
+    });
+
+    // Reset retries and clean up any fallback listeners when video begins active playback
+    this.video.addEventListener('playing', () => {
+      this.retryCount = 0;
+      clearTimeout(this.retryTimer);
+      this.removePassiveFallback();
+      if (this.isSamplingActive) {
+        this.resumeSamplingLoop();
+      }
+    });
+
+    // Listen to media ready events to trigger playback as soon as frames are ready
+    this.video.addEventListener('loadedmetadata', () => {
+      if (!this.prefersReducedMotion && this.video.paused) {
+        this.playVideoSafe();
+      }
+    });
+
+    this.video.addEventListener('canplay', () => {
+      if (!this.prefersReducedMotion && this.video.paused) {
+        this.playVideoSafe();
+      }
     });
 
     // Start video playback immediately if motion is allowed
@@ -117,6 +158,22 @@ export class MotionBackgroundPlayer {
         }
       }
     });
+
+    // Handle iOS Safari bfcache page restore
+    window.addEventListener('pageshow', () => {
+      if (this.video && this.video.paused && !this.prefersReducedMotion) {
+        this.playVideoSafe();
+      }
+    });
+
+    // Handle window load fallback
+    if (document.readyState !== 'complete') {
+      window.addEventListener('load', () => {
+        if (this.video && this.video.paused && !this.prefersReducedMotion) {
+          this.playVideoSafe();
+        }
+      }, { once: true });
+    }
 
     // Listen for OS reduced motion toggle
     if (motionMedia && motionMedia.addEventListener) {
@@ -146,14 +203,98 @@ export class MotionBackgroundPlayer {
   }
 
   playVideoSafe() {
-    if (!this.video) return;
+    if (!this.video || this.prefersReducedMotion) return;
+
+    // Re-verify strict muted attributes for iOS Safari autoplay allowance
     this.video.muted = true;
+    this.video.defaultMuted = true;
+    if (!this.video.hasAttribute('muted')) {
+      this.video.setAttribute('muted', '');
+    }
+    if (!this.video.hasAttribute('playsinline')) {
+      this.video.setAttribute('playsinline', '');
+    }
+    if (!this.video.hasAttribute('webkit-playsinline')) {
+      this.video.setAttribute('webkit-playsinline', '');
+    }
+
+    // If already actively playing, avoid redundant play invocations
+    if (!this.video.paused && this.video.currentTime > 0) {
+      return;
+    }
+
+    // If video has not initialized readyState, invoke load() once to trigger media pipeline
+    if (this.video.readyState === 0 && !this.hasCalledLoad) {
+      this.hasCalledLoad = true;
+      try {
+        this.video.load();
+      } catch (e) {
+        // Safe ignore
+      }
+    }
+
     const playPromise = this.video.play();
     if (playPromise !== undefined) {
-      playPromise.catch((err) => {
-        // Autoplay policy or user gesture delay
-        console.warn('[MotionBackground] Video autoplay note:', err?.message || err);
+      playPromise.then(() => {
+        this.retryCount = 0;
+        clearTimeout(this.retryTimer);
+        this.removePassiveFallback();
+        if (this.isSamplingActive) {
+          this.resumeSamplingLoop();
+        }
+      }).catch((err) => {
+        // Autoplay policy, system battery constraints, or gesture delay
+        console.warn('[MotionBackground] Autoplay note:', err?.name || err);
+        this.scheduleRetry();
       });
+    }
+  }
+
+  scheduleRetry() {
+    if (this.retryCount >= this.maxRetries) {
+      // Bounded retries reached. Attach a silent, passive touch/scroll handler
+      // so if iOS Safari is in Low Power Mode, the first swipe/touch seamlessly starts playback
+      // without ever displaying a play button.
+      this.attachPassiveFallback();
+      return;
+    }
+
+    this.retryCount++;
+    clearTimeout(this.retryTimer);
+    const delay = Math.min(300 * this.retryCount, 1200);
+    this.retryTimer = setTimeout(() => {
+      if (this.video && this.video.paused && !this.prefersReducedMotion) {
+        this.playVideoSafe();
+      }
+    }, delay);
+  }
+
+  attachPassiveFallback() {
+    if (this.passiveFallbackAttached) return;
+    this.passiveFallbackAttached = true;
+
+    const triggerSilentPlayback = () => {
+      if (this.video && this.video.paused && !this.prefersReducedMotion) {
+        this.playVideoSafe();
+      }
+      this.removePassiveFallback();
+    };
+
+    this._passiveHandler = triggerSilentPlayback;
+    const opts = { passive: true, once: true };
+    window.addEventListener('touchstart', triggerSilentPlayback, opts);
+    window.addEventListener('pointerdown', triggerSilentPlayback, opts);
+    window.addEventListener('scroll', triggerSilentPlayback, opts);
+  }
+
+  removePassiveFallback() {
+    if (!this.passiveFallbackAttached) return;
+    this.passiveFallbackAttached = false;
+    if (this._passiveHandler) {
+      window.removeEventListener('touchstart', this._passiveHandler);
+      window.removeEventListener('pointerdown', this._passiveHandler);
+      window.removeEventListener('scroll', this._passiveHandler);
+      this._passiveHandler = null;
     }
   }
 
